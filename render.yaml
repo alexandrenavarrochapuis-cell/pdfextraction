@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: scotty-budget-extractor
+    runtime: python
+    plan: starter  # change to "free" for $0/month with cold-start delay
+    region: oregon  # closest to most US users; change if needed
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 2 --timeout 300 --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+    autoDeploy: true
+    healthCheckPath: /
