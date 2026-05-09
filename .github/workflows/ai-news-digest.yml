@@ -1,0 +1,38 @@
+name: AI Strategy News Digest
+
+on:
+  schedule:
+    # 07:00 UTC, Mon-Fri
+    - cron: "0 7 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Print to logs instead of sending"
+        required: false
+        default: "false"
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-digest.txt
+
+      - name: Build and send digest
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ZAPIER_WEBHOOK_URL: ${{ secrets.ZAPIER_WEBHOOK_URL }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python news_digest.py --dry-run
+          else
+            python news_digest.py
+          fi
