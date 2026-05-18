@@ -2,8 +2,8 @@ name: AI Strategy News Digest
 
 on:
   schedule:
-    # 07:00 UTC, Mon-Fri
-    - cron: "0 7 * * 1-5"
+    # 07:00 UTC every Monday — weekly brief
+    - cron: "0 7 * * 1"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -31,8 +31,9 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ZAPIER_WEBHOOK_URL: ${{ secrets.ZAPIER_WEBHOOK_URL }}
         run: |
+          # 7 days + small overlap; URL-based dedupe handles the overlap.
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            python news_digest.py --dry-run
+            python news_digest.py --lookback-hours 170 --top-n 15 --dry-run
           else
-            python news_digest.py
+            python news_digest.py --lookback-hours 170 --top-n 15
           fi

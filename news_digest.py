@@ -1,9 +1,12 @@
 """Entry point for the AI strategy news digest.
 
-Run locally:
-    ANTHROPIC_API_KEY=... ZAPIER_WEBHOOK_URL=... python news_digest.py
+Runs weekly via GitHub Actions (Mondays 07:00 UTC) with a 170-hour lookback.
 
-Run in dry-run (no email):
+Run locally:
+    ANTHROPIC_API_KEY=... ZAPIER_WEBHOOK_URL=... \
+    python news_digest.py --lookback-hours 170 --top-n 15
+
+Dry-run (no email):
     python news_digest.py --dry-run
 """
 from __future__ import annotations

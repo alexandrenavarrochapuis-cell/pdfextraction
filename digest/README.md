@@ -1,11 +1,11 @@
 # AI Strategy News Digest
 
 A scheduled job that emails you a curated brief of the most strategically
-relevant AI news, every weekday morning at 07:00 UTC.
+relevant AI news, every **Monday morning at 07:00 UTC**.
 
 ## What it does
 
-1. Pulls the latest items (last ~26h) from the feeds in `digest/sources.py`:
+1. Pulls the past week's items (last ~170h) from the feeds in `digest/sources.py`:
    - **Frontier labs**: Anthropic, OpenAI, Google DeepMind, Meta AI
    - **Industry**: TechCrunch AI, The Verge AI, Bloomberg AI
    - **Practitioner signal**: Hacker News (AI-keyword filtered, ≥150 points)
@@ -71,17 +71,17 @@ python news_digest.py
 
 | Knob | Where | Default |
 |---|---|---|
-| Send time | `.github/workflows/ai-news-digest.yml` cron | `0 7 * * 1-5` (07:00 UTC, Mon-Fri) |
-| Item count | `--top-n` flag | 12 |
-| Lookback window | `--lookback-hours` flag | 26 |
+| Send time | `.github/workflows/ai-news-digest.yml` cron | `0 7 * * 1` (07:00 UTC, Mondays) |
+| Item count | `--top-n` flag | 15 (workflow) / 12 (script default) |
+| Lookback window | `--lookback-hours` flag | 170 (workflow) / 26 (script default) |
 | Sources | `digest/sources.py` | Labs + industry + HN |
 | Model | `DIGEST_MODEL` env var | `claude-haiku-4-5` |
 | Selection lens | `SYSTEM` prompt in `digest/summarize.py` | Head-of-AI-Strategy framing |
 
 ## Costs
 
-- GitHub Actions: free (well within free-tier minutes for a daily 1-2 minute job).
-- Anthropic API: ~$0.01-0.03 per send with Haiku, depending on item count.
-- Zapier: 1 task per send (≤22/month) — free plan covers it.
+- GitHub Actions: free (a single 1-2 minute job per week is well within the free tier).
+- Anthropic API: ~$0.02-0.05 per weekly send with Haiku, depending on item count.
+- Zapier: 1 task per week — free plan covers it.
 
-Total: under $1/month.
+Total: well under $1/month.
