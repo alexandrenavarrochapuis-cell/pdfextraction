@@ -1,5 +1,8 @@
 """
-Generate a mindmap diagram of app.py (the Scotty Budget Extractor API).
+Generate a mindmap diagram of scotty_api.py — the Scotty AI VM API that
+serves Qwen2.5 (via Ollama) behind an OpenAI-compatible endpoint, with
+hybrid RAG, a SQL authoritative layer, and a mounted MCP server
+(scotty_mcp.py).
 
 Lays the node tree out left-to-right and emits an SVG; if cairosvg is
 installed it also rasterises a PNG. Run from the repo root:
@@ -9,47 +12,61 @@ installed it also rasterises a PNG. Run from the repo root:
 
 from pathlib import Path
 
-# (label, [children]) — the structure of app.py and its backend link.
+# (label, [children]) — the structure of scotty_api.py (+ scotty_mcp.py).
 TREE = (
-    "app.py\nScotty Budget Extractor API\n(Flask)",
+    "scotty_api.py\nScotty AI VM API\nOpenAI-compatible · Qwen via Ollama",
     [
-        ("Config & State", [
-            ("Flask(__name__)", []),
-            ("MAX_CONTENT_LENGTH\n200 MB upload cap", []),
-            ("WORK_DIR\n/tmp/scotty_extractor", []),
-            ("JOBS dict\nin-memory job store", []),
-            ("FORMAT_LABELS\nfriendly format names", []),
+        ("Config (env / CLI)", [
+            ("SCOTTY_OLLAMA_MODEL\nqwen2.5:7b", []),
+            ("SCOTTY_OLLAMA_HOST\nlocalhost:11434", []),
+            ("SCOTTY_DB / COLLECTION\nChroma scotty_budgets", []),
+            ("SCOTTY_SQL_DB\nscotty_budget.db", []),
+            ("SCOTTY_TOP_K · HOST · PORT", []),
+            ("SCOTTY_API_KEY\noptional bearer auth", []),
         ]),
-        ("Routes", [
-            ("GET /\nindex() → index.html", []),
-            ("POST /api/extract\napi_extract()", []),
-            ("GET /api/download/<job_id>\napi_download()", []),
-            ("POST /api/cleanup/<job_id>\napi_cleanup()", []),
-            ("errorhandler 413\ntoo_large()", []),
+        ("Endpoints", [
+            ("GET /health\nchroma · ollama · sql status", []),
+            ("GET /v1/models", []),
+            ("POST /v1/chat/completions", []),
+            ("/mcp/mcp\nmounted MCP server", []),
         ]),
-        ("/api/extract flow", [
-            ("Validate upload\nfile present · .pdf only", []),
-            ("Create job\nuuid hex[:12] + job_dir", []),
-            ("Sanitise & save PDF", []),
-            ("Call backend\nprocess_pdf()", []),
-            ("Cost math\ntoken estimates · savings factor", []),
-            ("Store JOBS[job_id]\n→ return JSON stats", []),
+        ("Chat routing\n/v1/chat/completions", [
+            ("Tool-calling fast-path\nreq.tools → Ollama native", []),
+            ("Planner stage\nMCP tool-selector → format=json", []),
+            ("Persona stage\nclient prompt + anti-hallucination pre-commit", []),
+            ("Naked fallback\nthin OpenAI relay", []),
         ]),
-        ("Backend\nextract_multi.process_pdf", [
-            ("detect_format()\nUSVI 3-col / 4-col parsers", []),
-            ("Stream pages (PyMuPDF)\npage-at-a-time, low RAM", []),
-            ("Outputs\nstructured.json · financials.json\nchunks.md", []),
-            ("Returns stats\npages · line items · format", []),
+        ("RAG retrieval\nretrieve_context()", [
+            ("detect_jurisdiction\n15 jurisdictions", []),
+            ("rewrite_query_for_retrieval\nvague → precise terms", []),
+            ("Chroma semantic + BM25\nhybrid", []),
+            ("RRF fusion (k=60)\n+ chunk-type boosts", []),
+            ("render_context_block\ncited [n] passages", []),
         ]),
-        ("JSON response", [
-            ("job_id · original_filename", []),
-            ("format_id / label / subtitle\nconfidence", []),
-            ("pages · pages_with_tables\ntotal_line_items", []),
-            ("pdf/json token estimates\ncost_savings_factor", []),
+        ("SQL authoritative layer\nquery_sql_authoritative()", [
+            ("Dollar-intent + FY +\njurisdiction routing", []),
+            ("exact agency match", []),
+            ("agency lookup / grand total", []),
+            ("render_sql_block\nexact figures, zero-hallucination", []),
         ]),
-        ("Download path", [
-            ("Zip job['files']\nin memory (BytesIO)", []),
-            ("send_file\n<name>_extracted.zip", []),
+        ("Ollama integration", [
+            ("ollama.Client(host)", []),
+            ("call_ollama\nchat + tools passthrough", []),
+            ("_extract_content /\n_extract_tool_calls\nOpenAI tool shape", []),
+        ]),
+        ("Backend stack", [
+            ("Ollama → Qwen2.5:7b", []),
+            ("ChromaDB\nscotty_budgets", []),
+            ("rank_bm25 keyword index", []),
+            ("SQLite budget_lines", []),
+            ("FastAPI + uvicorn", []),
+        ]),
+        ("MCP server\nscotty_mcp.py @ /mcp", [
+            ("search_budget_docs\nhybrid retrieval", []),
+            ("get_grand_total\nSQL bypass", []),
+            ("get_agency_budget\nSQL bypass", []),
+            ("list_agencies", []),
+            ("summarize_budget\nRAG + synthesis", []),
         ]),
     ],
 )
@@ -213,12 +230,12 @@ def build():
 def main():
     out_dir = Path(__file__).resolve().parent
     svg = build()
-    svg_path = out_dir / "api_mindmap.svg"
+    svg_path = out_dir / "scotty_vm_api_mindmap.svg"
     svg_path.write_text(svg)
     print(f"wrote {svg_path}")
     try:
         import cairosvg
-        png_path = out_dir / "api_mindmap.png"
+        png_path = out_dir / "scotty_vm_api_mindmap.png"
         cairosvg.svg2png(bytestring=svg.encode(), write_to=str(png_path), scale=2.0)
         print(f"wrote {png_path}")
     except ImportError:
