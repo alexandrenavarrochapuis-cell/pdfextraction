@@ -1,8 +1,11 @@
 """
 Generate a mindmap diagram of scotty_api.py — the Scotty AI VM API that
 serves Qwen2.5 (via Ollama) behind an OpenAI-compatible endpoint, with
-hybrid RAG, a SQL authoritative layer, and a mounted MCP server
-(scotty_mcp.py).
+hybrid RAG and a SQL authoritative layer.
+
+Scoped to scotty_api.py only: the MCP tool definitions live in
+scotty_mcp.py, so this diagram shows just the MCP *wiring* (register_mcp)
+as it appears in the API file.
 
 Lays the node tree out left-to-right and emits an SVG; if cairosvg is
 installed it also rasterises a PNG. Run from the repo root:
@@ -12,7 +15,7 @@ installed it also rasterises a PNG. Run from the repo root:
 
 from pathlib import Path
 
-# (label, [children]) — the structure of scotty_api.py (+ scotty_mcp.py).
+# (label, [children]) — the structure of scotty_api.py (this file only).
 TREE = (
     "scotty_api.py\nScotty AI VM API\nOpenAI-compatible · Qwen via Ollama",
     [
@@ -24,11 +27,15 @@ TREE = (
             ("SCOTTY_TOP_K · HOST · PORT", []),
             ("SCOTTY_API_KEY\noptional bearer auth", []),
         ]),
+        ("Prompts", [
+            ("SCOTTY_PERSONA_PROMPT\ngov budget analyst", []),
+            ("QUERY_REWRITER_PROMPT\nvague → precise terms", []),
+        ]),
         ("Endpoints", [
             ("GET /health\nchroma · ollama · sql status", []),
             ("GET /v1/models", []),
             ("POST /v1/chat/completions", []),
-            ("/mcp/mcp\nmounted MCP server", []),
+            ("/mcp/mcp\nmounted via register_mcp()", []),
         ]),
         ("Chat routing\n/v1/chat/completions", [
             ("Tool-calling fast-path\nreq.tools → Ollama native", []),
@@ -54,19 +61,15 @@ TREE = (
             ("call_ollama\nchat + tools passthrough", []),
             ("_extract_content /\n_extract_tool_calls\nOpenAI tool shape", []),
         ]),
-        ("Backend stack", [
-            ("Ollama → Qwen2.5:7b", []),
-            ("ChromaDB\nscotty_budgets", []),
-            ("rank_bm25 keyword index", []),
-            ("SQLite budget_lines", []),
-            ("FastAPI + uvicorn", []),
+        ("MCP integration", [
+            ("register_mcp(app, ctx)\nfrom scotty_mcp", []),
+            ("shares retrieve_context,\nquery_sql_authoritative,\nollama_client", []),
+            ("non-fatal if SDK /\nmodule missing", []),
         ]),
-        ("MCP server\nscotty_mcp.py @ /mcp", [
-            ("search_budget_docs\nhybrid retrieval", []),
-            ("get_grand_total\nSQL bypass", []),
-            ("get_agency_budget\nSQL bypass", []),
-            ("list_agencies", []),
-            ("summarize_budget\nRAG + synthesis", []),
+        ("Entry point", [
+            ("get_config / parse_args", []),
+            ("build_app(cfg)\nlazy imports", []),
+            ("uvicorn.run(app)", []),
         ]),
     ],
 )
