@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Run the dream due-check on a daily Windows scheduled task.
 

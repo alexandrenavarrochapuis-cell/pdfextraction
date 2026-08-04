@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Run the due check and, if a dream is due, set the pending flag.
 

@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Install the dream memory-consolidation skill on Windows.
 
@@ -29,11 +29,18 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
-$KitDir    = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ClaudeDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $env:USERPROFILE '.claude' }
-$SkillDir  = Join-Path $ClaudeDir 'skills\dream'
-$Settings  = Join-Path $ClaudeDir 'settings.json'
-$ClaudeMd  = Join-Path $ClaudeDir 'CLAUDE.md'
+$KitDir       = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ClaudeDir    = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $env:USERPROFILE '.claude' }
+$SkillDir     = Join-Path $ClaudeDir 'skills\dream'
+# NB: not $Settings - PowerShell variable names are case-insensitive, so the
+# parsed-JSON $settings below would clobber the path and Set-Content would
+# write to a file named after the stringified object.
+$SettingsPath = Join-Path $ClaudeDir 'settings.json'
+$ClaudeMd     = Join-Path $ClaudeDir 'CLAUDE.md'
+
+# Set-Content -Encoding UTF8 emits a BOM on Windows PowerShell 5.1, and strict
+# JSON parsers (including Claude Code's) reject a leading BOM. Write explicitly.
+$Utf8NoBom = New-Object System.Text.UTF8Encoding $false
 
 # --- 1. skill ----------------------------------------------------------------
 New-Item -ItemType Directory -Force -Path $SkillDir | Out-Null
@@ -65,8 +72,8 @@ if (-not $Auto) {
 # cmd.exe expands %USERPROFILE%, so the stored command stays portable.
 $hookCommand = 'powershell -NoProfile -ExecutionPolicy Bypass -File "%USERPROFILE%\.claude\skills\dream\dream-check.ps1"'
 
-if (Test-Path -LiteralPath $Settings) {
-    $rawSettings = Get-Content -LiteralPath $Settings -Raw
+if (Test-Path -LiteralPath $SettingsPath) {
+    $rawSettings = Get-Content -LiteralPath $SettingsPath -Raw
     if ([string]::IsNullOrWhiteSpace($rawSettings)) { $rawSettings = '{}' }
     try {
         $settings = $rawSettings | ConvertFrom-Json
@@ -105,8 +112,8 @@ if ($alreadyPresent) {
         hooks   = @([PSCustomObject]@{ type = 'command'; command = $hookCommand })
     }
     $hooks.Stop = @($stop + $newEntry)
-    ($settings | ConvertTo-Json -Depth 20) | Set-Content -LiteralPath $Settings -Encoding UTF8
-    Write-Host "Stop hook   -> added to $Settings"
+    [System.IO.File]::WriteAllText($SettingsPath, ($settings | ConvertTo-Json -Depth 20), $Utf8NoBom)
+    Write-Host "Stop hook   -> added to $SettingsPath"
 }
 
 # --- 3. CLAUDE.md ------------------------------------------------------------
@@ -133,7 +140,7 @@ If `~/.claude/.dream-pending` exists at the start of a session:
 Do not interrupt or delay whatever the user is currently working on. If the
 dream is still running when the user's task finishes, report it when it lands.
 '@
-    Add-Content -LiteralPath $ClaudeMd -Value $section -Encoding UTF8
+    [System.IO.File]::AppendAllText($ClaudeMd, $section, $Utf8NoBom)
     Write-Host 'CLAUDE.md   -> Auto Dream section appended'
 }
 
