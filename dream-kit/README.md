@@ -12,13 +12,47 @@ lines and archives anything that has gone quiet.
 ## Install
 
 ```bash
-bash dream-kit/install.sh --auto   # skill + Stop hook + CLAUDE.md section
-bash dream-kit/install.sh          # skill only, no automation
+bash dream-kit/install.sh --auto              # skill + Stop hook + CLAUDE.md section
+bash dream-kit/install.sh --auto --schedule   # ...and a daily timer at 09:00
+bash dream-kit/install.sh                     # skill only, no automation
 ```
 
 The installer is idempotent: re-running it will not duplicate the hook or the
 `CLAUDE.md` section, and it merges into an existing `settings.json` rather than
 replacing it.
+
+### On the desktop, one paste
+
+Memory is only worth consolidating where your session history actually lives.
+A cloud sandbox is wiped between sessions, so run this on the machine you work
+on:
+
+```bash
+git clone https://github.com/alexandrenavarrochapuis-cell/pdfextraction.git ~/dream-kit-src 2>/dev/null || git -C ~/dream-kit-src pull
+bash ~/dream-kit-src/dream-kit/install.sh --auto --schedule
+```
+
+Then, in a Claude Code session on that machine: `dream dry run`.
+
+## Scheduling
+
+The Stop hook only fires when a session ends. `schedule.sh` covers the days you
+leave sessions open:
+
+```bash
+bash dream-kit/schedule.sh                # daily at 09:00
+bash dream-kit/schedule.sh --at 22:30     # daily at 22:30
+bash dream-kit/schedule.sh --uninstall    # remove it
+```
+
+It picks a backend automatically: **launchd** on macOS, a **systemd user timer**
+on Linux, **crontab** as a fallback. Re-running replaces the existing entry
+rather than stacking a second one.
+
+The timer never runs a dream itself — it runs the due-check and sets
+`.dream-pending`, exactly like the Stop hook. The next session does the work.
+That keeps consolidation inside a session that can show you the diff and stop
+for approval.
 
 ## What gets installed
 
@@ -28,6 +62,7 @@ replacing it.
 | `~/.claude/skills/dream/should-dream.sh` | due-check, exit 0 = due |
 | `~/.claude/settings.json` → `hooks.Stop` | sets `.dream-pending` on session exit |
 | `~/.claude/CLAUDE.md` → `## Auto Dream` | tells the next session to pick the flag up |
+| launchd / systemd / cron entry | optional daily due-check (`--schedule`) |
 
 ## Daily use
 
@@ -76,6 +111,7 @@ written faster than it is being consolidated.
 ## Turn it off
 
 ```bash
+bash dream-kit/schedule.sh --uninstall
 rm -f ~/.claude/.dream-pending
 python3 - <<'PY'
 import json, os

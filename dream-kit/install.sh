@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # install.sh — install the dream memory-consolidation skill.
 #
-#   bash install.sh          skill only, no automation
-#   bash install.sh --auto   skill + Stop hook + CLAUDE.md section
+#   bash install.sh                      skill only, no automation
+#   bash install.sh --auto               skill + Stop hook + CLAUDE.md section
+#   bash install.sh --auto --schedule    also add a daily timer (see schedule.sh)
+#   bash install.sh --auto --schedule --at 22:30
 #
 # Idempotent. Preserves existing hooks. Never touches project source.
 
@@ -14,12 +16,16 @@ SKILL_DIR="$CLAUDE_DIR/skills/dream"
 SETTINGS="$CLAUDE_DIR/settings.json"
 CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
 AUTO=0
+SCHEDULE=0
+AT=""
 
-for arg in "$@"; do
-  case "$arg" in
-    --auto) AUTO=1 ;;
-    -h|--help) sed -n '2,8p' "${BASH_SOURCE[0]}"; exit 0 ;;
-    *) echo "unknown option: $arg" >&2; exit 2 ;;
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --auto) AUTO=1; shift ;;
+    --schedule) SCHEDULE=1; shift ;;
+    --at) AT="${2:-}"; shift 2 ;;
+    -h|--help) sed -n '2,9p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
 done
 
@@ -30,8 +36,19 @@ cp "$KIT_DIR/skills/dream/should-dream.sh" "$SKILL_DIR/should-dream.sh"
 chmod +x "$SKILL_DIR/should-dream.sh"
 echo "installed skill  -> $SKILL_DIR"
 
+maybe_schedule() {
+  [ "$SCHEDULE" -eq 1 ] || return 0
+  echo
+  if [ -n "$AT" ]; then
+    bash "$KIT_DIR/schedule.sh" --at "$AT"
+  else
+    bash "$KIT_DIR/schedule.sh"
+  fi
+}
+
 if [ "$AUTO" -eq 0 ]; then
   echo "skill only. re-run with --auto to arm the Stop hook."
+  maybe_schedule
   exit 0
 fi
 
@@ -94,6 +111,9 @@ dream is still running when the user's task finishes, report it when it lands.
 MD
   echo "CLAUDE.md   -> Auto Dream section appended"
 fi
+
+# --- 4. optional daily timer -------------------------------------------------
+maybe_schedule
 
 echo
 echo "armed. check with:  bash $SKILL_DIR/should-dream.sh; echo due=\$?"
