@@ -90,9 +90,10 @@ for approval.
 | --- | --- |
 | `~/.claude/skills/dream/SKILL.md` | the four-phase consolidation procedure |
 | `~/.claude/skills/dream/should-dream.sh` | due-check, exit 0 = due |
+| `~/.claude/skills/dream/*.ps1` | the same two, on Windows, plus `dream-check.ps1` |
 | `~/.claude/settings.json` → `hooks.Stop` | sets `.dream-pending` on session exit |
 | `~/.claude/CLAUDE.md` → `## Auto Dream` | tells the next session to pick the flag up |
-| launchd / systemd / cron entry | optional daily due-check (`--schedule`) |
+| launchd / systemd / cron / Task Scheduler | optional daily due-check (`--schedule`) |
 
 ## Daily use
 
@@ -121,6 +122,20 @@ bash ~/.claude/skills/dream/should-dream.sh; echo "due=$?"
 
 ```bash
 touch ~/.claude/.dream-pending
+```
+
+On Windows:
+
+```powershell
+(Get-Content $HOME\.claude\settings.json -Raw | ConvertFrom-Json).hooks.Stop | ConvertTo-Json -Depth 10
+powershell -File $HOME\.claude\skills\dream\should-dream.ps1; "due=$LASTEXITCODE"
+Get-ScheduledTask -TaskName ClaudeDreamCheck | Select-Object TaskName, State
+```
+
+Force one:
+
+```powershell
+New-Item -ItemType File -Force -Path $HOME\.claude\.dream-pending
 ```
 
 ## Weekly check, two minutes on the phone
@@ -159,6 +174,21 @@ if 'Stop' in hooks:
     hooks['Stop'] = [h for h in hooks['Stop'] if not is_dream(h)]
 json.dump(s, open(p, 'w'), indent=2)
 PY
+```
+
+On Windows:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File $HOME\dream-kit-src\dream-kit\windows\schedule.ps1 -Uninstall
+Remove-Item $HOME\.claude\.dream-pending -Force -ErrorAction SilentlyContinue
+
+$p = "$HOME\.claude\settings.json"
+$s = Get-Content $p -Raw | ConvertFrom-Json
+$s.hooks.Stop = @($s.hooks.Stop | Where-Object {
+    ($_ | ConvertTo-Json -Depth 20 -Compress) -notmatch 'dream-check|should-dream'
+})
+[System.IO.File]::WriteAllText($p, ($s | ConvertTo-Json -Depth 20),
+                               (New-Object System.Text.UTF8Encoding $false))
 ```
 
 The skill stays installed and `/dream` still works manually.
