@@ -29,6 +29,10 @@ These are not suggestions. A run that violates one is a failed run.
 - Transcripts: `~/.claude/projects/*/sessions/*.jsonl` — and, on installs that
   write transcripts flat, `~/.claude/projects/*/*.jsonl`. Glob both.
 
+On Windows the same tree lives at `%USERPROFILE%\.claude\`. Prefer the Glob and
+Grep tools over shell commands for discovery — they behave the same on every
+platform, and the shell snippets below are illustrative, not required.
+
 ## First run against a project
 
 Before the first consolidation in a given project:
@@ -56,13 +60,19 @@ Note and hold in working memory:
 
 ## Phase 2 — GATHER SIGNAL
 
-Find transcripts modified in the last 7 days:
+Find transcripts modified in the last 7 days. Glob `**/*.jsonl` under the
+projects directory and keep the ones whose mtime falls inside the window, or:
 
 ```bash
 find ~/.claude/projects -name '*.jsonl' -mtime -7 2>/dev/null
 ```
 
-(Narrow the window if the user asked for one — "last 3 days only" means `-mtime -3`.)
+```powershell
+Get-ChildItem "$env:USERPROFILE\.claude\projects" -Filter *.jsonl -Recurse -File |
+  Where-Object { $_.LastWriteTime -gt (Get-Date).AddDays(-7) }
+```
+
+(Narrow the window if the user asked for one — "last 3 days only" is `-3`.)
 
 **Use targeted `grep` against these files. Never read a transcript in full.**
 Transcripts are large; a full read burns the context this skill exists to protect.
@@ -132,6 +142,11 @@ Entry format — one line, no wrapping:
 ```bash
 date +%s > "<memory-dir>/.last-dream"
 rm -f ~/.claude/.dream-pending
+```
+
+```powershell
+[int][double]::Parse((Get-Date -UFormat %s)) | Set-Content "<memory-dir>\.last-dream"
+Remove-Item "$env:USERPROFILE\.claude\.dream-pending" -Force -ErrorAction SilentlyContinue
 ```
 
 ---

@@ -21,7 +21,32 @@ The installer is idempotent: re-running it will not duplicate the hook or the
 `CLAUDE.md` section, and it merges into an existing `settings.json` rather than
 replacing it.
 
-### On the desktop, one paste
+### Windows
+
+Native PowerShell, no WSL and no Git Bash needed:
+
+```powershell
+git clone https://github.com/alexandrenavarrochapuis-cell/pdfextraction.git $HOME\dream-kit-src
+powershell -ExecutionPolicy Bypass -File $HOME\dream-kit-src\dream-kit\windows\install.ps1 -Auto -Schedule
+```
+
+(Already cloned? `git -C $HOME\dream-kit-src pull` first.)
+
+| File | |
+| --- | --- |
+| `windows\install.ps1` | `-Auto`, `-Schedule`, `-At HH:MM` — same behaviour as `install.sh` |
+| `windows\should-dream.ps1` | due check, exit 0 = due |
+| `windows\dream-check.ps1` | what the hook and the task call: check, then set the flag |
+| `windows\schedule.ps1` | daily task via Task Scheduler, `-Uninstall` to remove |
+
+The Stop hook is stored as
+`powershell -NoProfile -ExecutionPolicy Bypass -File "%USERPROFILE%\.claude\skills\dream\dream-check.ps1"`
+— `cmd.exe` expands `%USERPROFILE%`, so the entry stays valid across machines.
+
+Works on Windows PowerShell 5.1 and PowerShell 7. The scheduled task registers
+under your own user, so no elevation is needed.
+
+### macOS and Linux, one paste
 
 Memory is only worth consolidating where your session history actually lives.
 A cloud sandbox is wiped between sessions, so run this on the machine you work
@@ -46,8 +71,9 @@ bash dream-kit/schedule.sh --uninstall    # remove it
 ```
 
 It picks a backend automatically: **launchd** on macOS, a **systemd user timer**
-on Linux, **crontab** as a fallback. Re-running replaces the existing entry
-rather than stacking a second one.
+on Linux, **crontab** as a fallback. On Windows use `windows\schedule.ps1`,
+which registers a **Task Scheduler** task. Re-running replaces the existing
+entry rather than stacking a second one.
 
 The timer never runs a dream itself — it runs the due-check and sets
 `.dream-pending`, exactly like the Stop hook. The next session does the work.
