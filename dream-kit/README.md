@@ -26,11 +26,15 @@ replacing it.
 Native PowerShell, no WSL and no Git Bash needed:
 
 ```powershell
-git clone https://github.com/alexandrenavarrochapuis-cell/pdfextraction.git $HOME\dream-kit-src
+git clone -b claude/dream-memory-consolidation-j1ks1p https://github.com/alexandrenavarrochapuis-cell/pdfextraction.git $HOME\dream-kit-src
 powershell -ExecutionPolicy Bypass -File $HOME\dream-kit-src\dream-kit\windows\install.ps1 -Auto -Schedule
 ```
 
 (Already cloned? `git -C $HOME\dream-kit-src pull` first.)
+
+**`-b` is required:** `dream-kit/` lives on the `claude/dream-memory-consolidation-j1ks1p`
+branch, not on the default branch. Without it the clone succeeds and the
+install line then fails on a path that does not exist.
 
 | File | |
 | --- | --- |
@@ -53,7 +57,7 @@ A cloud sandbox is wiped between sessions, so run this on the machine you work
 on:
 
 ```bash
-git clone https://github.com/alexandrenavarrochapuis-cell/pdfextraction.git ~/dream-kit-src 2>/dev/null || git -C ~/dream-kit-src pull
+git clone -b claude/dream-memory-consolidation-j1ks1p https://github.com/alexandrenavarrochapuis-cell/pdfextraction.git ~/dream-kit-src 2>/dev/null || git -C ~/dream-kit-src pull
 bash ~/dream-kit-src/dream-kit/install.sh --auto --schedule
 ```
 
