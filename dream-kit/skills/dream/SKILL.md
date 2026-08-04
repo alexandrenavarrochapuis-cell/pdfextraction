@@ -145,7 +145,10 @@ rm -f ~/.claude/.dream-pending
 ```
 
 ```powershell
-[int][double]::Parse((Get-Date -UFormat %s)) | Set-Content "<memory-dir>\.last-dream"
+# NOT Get-Date -UFormat %s: on Windows PowerShell 5.1 that builds the epoch from
+# LOCAL time, so the stamp lands off by your UTC offset (early west of UTC, late
+# east of it) and the 24h gate in should-dream misfires by the same amount.
+[DateTimeOffset]::UtcNow.ToUnixTimeSeconds() | Set-Content "<memory-dir>\.last-dream"
 Remove-Item "$env:USERPROFILE\.claude\.dream-pending" -Force -ErrorAction SilentlyContinue
 ```
 
