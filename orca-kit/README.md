@@ -38,9 +38,37 @@ per-user install under `%LOCALAPPDATA%\Programs\orca`.
 | `-Silent` | pass `/S` so the installer window never appears |
 | `-SkipSkills` | app only, leave Claude Code alone |
 | `-SkipApp` | skills only — use to retry after installing Node |
+| `-Diagnose` | print the environment report and install nothing |
 
 The skills step needs Node on PATH. Without it the app still installs and the
 script tells you the command to run later.
+
+### If it goes wrong, one paste is enough
+
+However the run ends, the script prints a report between two markers:
+
+```
+----------------- copy from here -----------------
+...
+------------------ to here -----------------------
+```
+
+Copy that block and send it. It carries the PowerShell and Windows versions,
+whether you were elevated, your execution policy, Node/npm/npx/git versions,
+which of the four candidate install paths exist and at what version, the
+installer's exit code, the Authenticode status, the skills CLI's own output,
+and — on a failure — the exception type and the exact line that threw.
+
+**It is redacted.** Username, hostname, domain and profile paths are replaced
+with `<user>`, `<host>`, `<domain>` and `<profile>` before anything is printed
+or written. A full unredacted PowerShell transcript is saved next to it for
+your own use; that one is local-only, so do not paste it.
+
+To collect the report without installing anything:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File $HOME\orca-kit-src\orca-kit\windows\install.ps1 -Diagnose
+```
 
 ## Install the always-on server
 
@@ -166,8 +194,13 @@ Not tested here, because this container has neither:
 - **systemd** — the unit is written and verified by inspection, and its
   `ExecStart` line was run by hand exactly as written, but `systemctl enable/start`
   never executed
-- **Windows** — `install.ps1` is parse-checked, its path logic unit-tested under
-  `Set-StrictMode`, and its platform guard exercised, but the `.exe` was never
-  run. Signature checking and the installer's exit code are handled but unproven.
+- **Windows** — the `.exe` was never run. What was exercised, under PowerShell
+  7.6.5 with the platform guard stubbed out: the full `-Diagnose` run, the
+  environment probe's fallbacks for Windows-only APIs, report assembly and
+  emission, the failure path (correct exception type, line number, and exit 1),
+  and the redaction function against simulated Windows values including
+  lowercase paths — verified to leak no username, hostname or domain. The
+  path-resolution logic is unit-tested under `Set-StrictMode`. Signature
+  checking and the installer's exit code are handled but unproven.
 
 If the Windows run surprises you, send me the output and I will fix it.
