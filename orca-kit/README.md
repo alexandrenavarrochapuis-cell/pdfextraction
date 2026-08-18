@@ -30,8 +30,8 @@ line then fails on a path that does not exist.
 
 It downloads the signed `orca-windows-setup.exe`, checks its Authenticode
 signature, runs it, confirms the app landed, and then installs Orca's `orca-cli`
-and `orchestration` skills into Claude Code. No elevation needed — it is a
-per-user install under `%LOCALAPPDATA%\Programs\orca`.
+and `orchestration` skills for Claude Code, Gemini CLI and Grok. No elevation
+needed — it is a per-user install under `%LOCALAPPDATA%\Programs\orca`.
 
 | Flag | |
 | --- | --- |
@@ -42,6 +42,28 @@ per-user install under `%LOCALAPPDATA%\Programs\orca`.
 
 The skills step needs Node on PATH. Without it the app still installs and the
 script tells you the command to run later.
+
+### Which agents get the skills
+
+`orca-cli` and `orchestration` are installed for four targets, so Claude,
+Gemini and Grok can all drive Orca worktrees and terminals:
+
+| target | where it lands |
+| --- | --- |
+| `claude-code` | `~/.claude/skills` |
+| `gemini-cli` | reads the shared `~/.agents/skills` |
+| `grok` | `~/.grok/skills` |
+| `universal` | `~/.agents/skills` — anything else reading the shared dir |
+
+These are the **skills CLI's** agent ids, not Orca's. Gemini's is `gemini-cli`,
+not `gemini`, and Grok keeps its own directory — so `universal` on its own
+reaches neither.
+
+The real files live in `~/.agents/skills`; the per-agent directories are
+symlinks into it. Creating a directory symlink on Windows needs Developer Mode
+or an elevated shell, so if that fails the script retries automatically with
+`--copy`, which writes real copies. The trade-off is that copies no longer
+share one source of truth, so re-run the script after an Orca upgrade.
 
 ### If it goes wrong, one paste is enough
 
@@ -97,7 +119,7 @@ starts it, and prints the pairing URL.
 | --- | --- |
 | `--pairing-address <addr>` | required; what clients dial |
 | `--port <n>` | default `6768` |
-| `--no-skills` | skip the Claude Code skills install |
+| `--no-skills` | skip the agent skills install |
 | `--uninstall` | stop the service, remove the unit and `/opt/orca` |
 
 Re-run it any time to upgrade: it keeps one rollback copy at
@@ -176,6 +198,8 @@ On Windows, uninstall from **Settings → Apps → Orca**. The skills are separa
 npx --yes skills remove orca-cli orchestration --global -y
 ```
 
+That clears them from every agent they were installed for.
+
 ## What was actually tested
 
 Verified here against **Orca 1.4.184** on Ubuntu:
@@ -186,6 +210,9 @@ Verified here against **Orca 1.4.184** on Ubuntu:
   correctly
 - `orca-ide status --json` reaching the runtime, and `orca skills install`
   resolving to the `npx skills add ...` command the Windows script runs
+- all four agent targets accepted by a real install: `~/.claude/skills` and
+  `~/.grok/skills` get symlinks into `~/.agents/skills`, and the `--copy`
+  fallback writes real copies instead
 - the server script's argument validation, download, extraction, and the exact
   unit file it writes
 

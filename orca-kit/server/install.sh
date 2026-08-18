@@ -187,11 +187,12 @@ if [ "$SKILLS" -eq 1 ]; then
         sh -c 'command -v npx >/dev/null'; then
     sudo -u "$SERVICE_USER" env HOME="$SERVICE_HOME" \
       PATH="$SERVICE_HOME/.local/bin:/usr/local/bin:/usr/bin:/bin" \
-      orca-ide skills install --skill orca-cli --skill orchestration || \
+      orca-ide skills install --skill orca-cli --skill orchestration \
+        --agent claude-code,gemini-cli,grok,universal || \
       echo "    skills install failed; run it yourself later (see README)"
   else
     echo "    node/npx not found for '$SERVICE_USER' — skipped."
-    echo "    install Node, then:  sudo -u $SERVICE_USER -H $SERVICE_HOME/.local/bin/orca-ide skills install --skill orca-cli --skill orchestration"
+    echo "    install Node, then:  sudo -u $SERVICE_USER -H $SERVICE_HOME/.local/bin/orca-ide skills install --skill orca-cli --skill orchestration --agent claude-code,gemini-cli,grok,universal"
   fi
 fi
 

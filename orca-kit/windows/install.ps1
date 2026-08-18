@@ -328,15 +328,19 @@ try {
       # This is exactly the command `orca skills install --skill orca-cli
       # --skill orchestration` resolves to. --yes and -y are load-bearing:
       # without them the skills CLI opens an interactive agent picker and blocks.
+      # These are the skills CLI's own agent ids, not Orca's. Gemini is
+      # 'gemini-cli' (not 'gemini'), and Grok keeps its own ~/.grok/skills, so
+      # 'universal' alone does not reach either of them.
+      $agentTargets = @('claude-code', 'gemini-cli', 'grok', 'universal')
       $skillArgs = @(
         '--yes', 'skills', 'add', $SkillsRepo,
         '--skill', 'orca-cli',
         '--skill', 'orchestration',
-        '--global',
-        '--agent', 'claude-code',
-        '--agent', 'universal',
-        '-y'
+        '--global'
       )
+      foreach ($agent in $agentTargets) { $skillArgs += @('--agent', $agent) }
+      $skillArgs += '-y'
+
       Write-Note "npx $($skillArgs -join ' ')"
       $skillOutput = & npx @skillArgs 2>&1
       foreach ($line in $skillOutput) {
@@ -344,10 +348,27 @@ try {
         Add-Report "    | $line"
       }
       Add-Report "    skills exit code: $LASTEXITCODE"
+
+      # The real files land in ~/.agents/skills and Claude Code and Grok get
+      # symlinks into it. Creating a directory symlink on Windows needs
+      # Developer Mode or an elevated shell, so retry as plain copies rather
+      # than leave the skills half-installed.
       if ($LASTEXITCODE -ne 0) {
-        Write-Warn "the skills CLI exited $LASTEXITCODE. Orca itself is fine; re-run with -SkipApp to retry."
+        Write-Warn "the skills CLI exited $LASTEXITCODE - retrying with --copy (no symlinks)"
+        $copyArgs = $skillArgs + '--copy'
+        $copyOutput = & npx @copyArgs 2>&1
+        foreach ($line in $copyOutput) {
+          Write-Host "    $line"
+          Add-Report "    | $line"
+        }
+        Add-Report "    skills --copy exit code: $LASTEXITCODE"
+        if ($LASTEXITCODE -ne 0) {
+          Write-Warn "still failing. Orca itself is fine; re-run with -SkipApp to retry."
+        } else {
+          Write-Note 'skills installed globally (copied) for Claude Code, Gemini CLI and Grok'
+        }
       } else {
-        Write-Note 'skills installed globally for Claude Code'
+        Write-Note 'skills installed globally for Claude Code, Gemini CLI and Grok'
       }
     }
   }
