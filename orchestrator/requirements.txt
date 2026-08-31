@@ -1,0 +1,8 @@
+# Voice orchestration layer. Separate from the repo root requirements.txt,
+# which belongs to the Flask PDF app.
+#
+# --text mode needs nothing here; the stdlib covers it. Install these before
+# wiring audio.
+websockets>=12.0
+sounddevice>=0.4.6
+keyboard>=0.13.5 ; sys_platform == "win32"
