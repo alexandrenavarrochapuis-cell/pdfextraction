@@ -2,6 +2,8 @@
 
 A drag-and-drop budget extractor for analysts. Upload a government budget PDF, get structured JSON back.
 
+> Also in this repo: an **AI Strategy News Digest** — a daily emailed brief curated by Claude. See [`digest/README.md`](digest/README.md).
+
 ## Deploy in ~10 minutes
 
 ### 1. Push this folder to a GitHub repo
