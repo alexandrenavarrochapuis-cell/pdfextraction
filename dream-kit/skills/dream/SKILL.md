@@ -89,9 +89,28 @@ Grep for four signal classes:
 For each finding, record:
 
 - the fact, stated as one self-contained sentence;
-- the date, taken from the transcript file's mtime;
+- the date, taken from the `timestamp` of the transcript entry it came from;
 - confidence: high / medium / low;
 - any contradiction with an entry already in memory.
+
+### Dates come from the entry, not the file
+
+Every line in a `.jsonl` transcript carries its own ISO-8601 `timestamp`. Use
+that. **Never use the file's mtime.** A session left open for weeks has a single
+mtime — today's — so dating its findings by it forward-dates the entire history:
+six weeks of decisions all land on the day the dream happened to run, and phase 3
+then stamps that wrong date in as provenance, where it reads as authoritative.
+
+```bash
+# the date for a finding on line N of a transcript
+sed -n 'Np' transcript.jsonl \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['timestamp'][:10])"
+```
+
+The window has the same trap. The `find -mtime -7` above picks candidate
+*files*; inside a file that qualifies, keep only the entries whose own
+`timestamp` falls in the window. Otherwise one long-running session drags its
+whole history in as though it were this week's.
 
 ### Redaction gate (mandatory)
 
@@ -116,7 +135,8 @@ Rules, in order of precedence:
 1. **Never duplicate.** If the fact is already in memory, skip it — or update
    the existing line in place.
 2. **All dates absolute.** "yesterday", "last week", "recently" must not survive
-   into a memory file. Convert against the transcript mtime.
+   into a memory file. Convert against the entry's own `timestamp`, never the
+   file's mtime.
 3. **Contradictions replace, with a trail.** When a new fact contradicts an old
    one, rewrite the old line and append
    `(updated YYYY-MM-DD, previously: X)`.
