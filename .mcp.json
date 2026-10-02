@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "cua": {
+      "type": "stdio",
+      "command": "cua",
+      "args": ["mcp"]
+    }
+  }
+}
