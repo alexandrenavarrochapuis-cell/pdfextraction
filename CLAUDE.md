@@ -14,6 +14,8 @@ Scotty Budget Extractor: a Flask web app where analysts drag and drop a governme
 
 Run locally with `pip install -r requirements.txt` then `python3 app.py`, and open http://localhost:5000. There is no test suite yet. The sections below are the Claude Code Templates Python defaults; the pytest, black, isort, flake8 and mypy commands apply once those tools are added to the project.
 
+Computer-use tooling: `.claude/skills/` carries cua's five skills (cua-driver, cua-sandboxes, cua-spaces, cua-volume, gui-automation) and `.mcp.json` registers the `cua` MCP server, the same set that `cua agents setup` installs for Claude Code, here at project scope. Both need the `cua` CLI on the machine running Claude Code (one-line installer at https://cua.ai/docs). Cloud sessions do not have it, so the `cua` MCP server shows as failed there and the skills cannot run.
+
 ## Development Commands
 
 ### Environment Management
