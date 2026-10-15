@@ -15,7 +15,8 @@ export function passKind(contentType: string, filename: string | null): "wallet"
   const name = (filename ?? "").toLowerCase();
   if (contentType === PKPASS_TYPE || name.endsWith(".pkpass")) return "wallet";
   if (contentType === "application/pdf" || name.endsWith(".pdf")) return "pdf";
-  if (contentType.startsWith("image/")) return "image";
+  // Raster images only: an SVG could carry script when served from this origin.
+  if (/^image\/(png|jpe?g|webp|heic|heif|gif)$/.test(contentType)) return "image";
   return null;
 }
 
@@ -58,6 +59,7 @@ export async function saveBoardingPass(db: SupabaseClient, input: SavePassInput)
         ...facts,
         seat: facts.seat ?? pass.seat ?? (bcbp ? factsFromBcbp(bcbp, reference).seat : null),
         passengerName: facts.passengerName ?? bcbp?.passengerName ?? pass.passengerName,
+        tsaPrecheck: facts.tsaPrecheck ?? pass.tsaPrecheck,
       };
     }
   }
@@ -100,6 +102,7 @@ export async function saveBoardingPass(db: SupabaseClient, input: SavePassInput)
       boarding_group: group,
       boarding_time: boardingTime,
       gate,
+      tsa_precheck: facts.tsaPrecheck ?? null,
       source_email_id: input.sourceEmailId ?? null,
     })
     .select("id")

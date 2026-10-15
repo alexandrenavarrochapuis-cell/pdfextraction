@@ -19,6 +19,7 @@ import {
 import { expiryStatus } from "@/lib/vault/expiry";
 import type { DocumentKind, TravelDocument, Traveler } from "@/lib/types";
 import { AlertIcon, CheckIcon, LockIcon } from "./icons";
+import { CopyButton } from "./CopyButton";
 
 const KIND_LABEL: Record<DocumentKind, string> = {
   passport: "Passport",
@@ -106,6 +107,9 @@ function DocumentCard({
       {secret ? (
         <div>
           <p className="font-mono text-2xl font-bold tracking-wider">{secret.number || "(no number)"}</p>
+          {secret.number ? (
+            <CopyButton value={secret.number} label={doc.kind === "trusted_traveler" ? "Copy Known Traveler Number" : "Copy number"} />
+          ) : null}
           {secret.notes ? <p className="whitespace-pre-wrap">{secret.notes}</p> : null}
         </div>
       ) : null}

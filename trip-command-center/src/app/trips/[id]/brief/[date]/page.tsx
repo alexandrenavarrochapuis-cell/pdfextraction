@@ -62,6 +62,11 @@ function BriefView({ brief, tripId }: { brief: BriefPayload; tripId: string }) {
                 Arrives {dep.destination} at {formatTime(dep.arrive_at, dep.arrive_tz)} local
               </p>
             ) : null}
+            {brief.security_tips.map((t) => (
+              <p key={t} className="font-semibold">
+                {t}
+              </p>
+            ))}
             {dep.check_in_opens_at ? (
               <p className="text-muted">
                 Online check-in usually opens 24 hours before: {formatTime(dep.check_in_opens_at, homeTz)} Florida time
@@ -194,6 +199,9 @@ async function Brief({ params }: { params: Promise<{ id: string; date: string }>
       driveMinutes: driveMinutesTo,
       now,
       weather: fetchDayWeather,
+      trustedTraveler: !!(
+        await db.from("travel_documents").select("id").eq("kind", "trusted_traveler").limit(1)
+      ).data?.length,
     });
 
   return (

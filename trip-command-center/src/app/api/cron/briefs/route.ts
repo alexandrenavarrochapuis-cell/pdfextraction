@@ -61,6 +61,12 @@ async function runForUser(db: SupabaseClient, profile: Profile, now: Date) {
     segments: ((segs ?? []) as Segment[]).filter((s) => s.trip_id === trip.id),
   }));
   const results: { trip_id: string; for_date: string; delivered: number | null }[] = [];
+  const { data: trusted } = await db
+    .from("travel_documents")
+    .select("id")
+    .eq("user_id", profile.id)
+    .eq("kind", "trusted_traveler")
+    .limit(1);
 
   for (const due of dueBriefs(withSegments, now, { homeTz: userTimezone(), briefHour: profile.brief_hour })) {
     const payload = await buildBrief({
@@ -73,6 +79,7 @@ async function runForUser(db: SupabaseClient, profile: Profile, now: Date) {
       driveMinutes: driveMinutesTo,
       now,
       weather: fetchDayWeather,
+      trustedTraveler: !!trusted?.length,
     });
     const briefId = await claim(db, profile.id, due, payload);
     if (!briefId) continue;

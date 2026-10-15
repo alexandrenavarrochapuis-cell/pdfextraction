@@ -10,6 +10,7 @@ export interface Connection {
   from_segment_id: string;
   to_segment_id: string;
   airport: string; // code or city
+  depart_gate: string | null;
   minutes: number;
   arrive_terminal: string | null;
   depart_terminal: string | null;
@@ -50,6 +51,7 @@ export function findConnections(segments: Segment[]): Connection[] {
       minutes,
       arrive_terminal: a.details?.arrival_terminal ?? null,
       depart_terminal: b.details?.departure_terminal ?? null,
+      depart_gate: b.details?.departure_gate ?? null,
       // Rough rule of thumb; airlines publish their own minimum connection times.
       tight: minutes < (international ? 90 : 60),
     });
@@ -125,9 +127,8 @@ export function airbnbSearchUrl(gap: StayGap): string {
   return `https://www.airbnb.com/s/${encodeURIComponent(gap.city)}/homes?${p}`;
 }
 
-/** Apple Maps at the airport: it shows indoor maps (gates, security, lounges) at many large airports. */
-export function airportMapUrl(code: string | null | undefined): string | null {
-  const a = lookupAirport(code);
-  if (!a) return code ? `https://maps.apple.com/?q=${encodeURIComponent(`${code} airport`)}` : null;
-  return `https://maps.apple.com/?q=${encodeURIComponent(`${a.name} Airport`)}&ll=${a.lat},${a.lng}&z=16`;
+/** In-app airport map, optionally focused on a gate. */
+export function airportPageUrl(code: string | null | undefined, gate?: string | null): string | null {
+  if (!code || !/^[A-Za-z]{3}$/.test(code)) return null;
+  return `/airports/${code.toUpperCase()}${gate ? `?gate=${encodeURIComponent(gate)}` : ""}`;
 }

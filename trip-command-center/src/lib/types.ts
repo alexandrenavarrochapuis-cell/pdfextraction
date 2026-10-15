@@ -215,6 +215,7 @@ export interface BoardingPass {
   boarding_group: string | null;
   boarding_time: string | null;
   gate: string | null;
+  tsa_precheck: boolean | null;
   source_email_id: string | null;
   created_at: string;
 }

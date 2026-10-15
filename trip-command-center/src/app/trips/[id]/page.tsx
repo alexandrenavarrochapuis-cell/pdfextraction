@@ -8,7 +8,7 @@ import { getTrip } from "@/lib/data";
 import { userTimezone } from "@/lib/config";
 import { buildTimeline } from "@/lib/timeline";
 import { homeAirports } from "@/lib/config";
-import { airbnbSearchUrl, airportMapUrl, bookingSearchUrl, findConnections, findStayGaps, type Connection } from "@/lib/trips/insights";
+import { airbnbSearchUrl, airportPageUrl, bookingSearchUrl, findConnections, findStayGaps, type Connection } from "@/lib/trips/insights";
 import type { SavedPlace, TravelDocument, Traveler } from "@/lib/types";
 import { passportWarnings } from "@/lib/vault/expiry";
 import { countryName, tripCountries } from "@/lib/assistant/countries";
@@ -30,7 +30,7 @@ function duration(minutes: number): string {
 }
 
 function ConnectionRow({ c }: { c: Connection }) {
-  const map = airportMapUrl(c.airport);
+  const map = airportPageUrl(c.airport, c.depart_gate);
   return (
     <div
       className={`ml-6 rounded-2xl bg-paper p-3 ${c.tight ? "border-2 border-dashed border-ink" : "border border-line"}`}
@@ -46,9 +46,9 @@ function ConnectionRow({ c }: { c: Connection }) {
         </p>
       ) : null}
       {map ? (
-        <a href={map} className={`${linkBtn} mt-2`} target="_blank" rel="noreferrer">
-          <MapIcon size={18} /> Airport map
-        </a>
+        <Link href={map} className={`${linkBtn} mt-2`}>
+          <MapIcon size={18} /> {c.depart_gate ? `Find gate ${c.depart_gate}` : "Airport map"}
+        </Link>
       ) : null}
     </div>
   );

@@ -164,6 +164,14 @@ export function FlightTracker({ segmentId, homeTz }: { segmentId: string; homeTz
                 {view.live.gate_origin ? `Gate ${view.live.gate_origin}` : ""}
               </p>
             ) : null}
+            {view.origin.code ? (
+              <a
+                href={`/airports/${view.origin.code}${view.live?.gate_origin ? `?gate=${encodeURIComponent(view.live.gate_origin)}` : ""}`}
+                className={action}
+              >
+                {view.live?.gate_origin ? `Find gate ${view.live.gate_origin}` : `${view.origin.code} airport map`}
+              </a>
+            ) : null}
           </div>
           <div>
             <p className="text-sm font-semibold uppercase text-muted">
@@ -179,6 +187,14 @@ export function FlightTracker({ segmentId, homeTz }: { segmentId: string; homeTz
               </p>
             ) : null}
             {view.live?.baggage_claim ? <p>Baggage claim {view.live.baggage_claim}</p> : null}
+            {view.destination.code ? (
+              <a
+                href={`/airports/${view.destination.code}${view.live?.gate_destination ? `?gate=${encodeURIComponent(view.live.gate_destination)}` : ""}`}
+                className={action}
+              >
+                {view.destination.code} airport map
+              </a>
+            ) : null}
           </div>
         </div>
         {view.plane?.source === "live" && (view.plane.altitude_ft || view.plane.groundspeed_kt) ? (

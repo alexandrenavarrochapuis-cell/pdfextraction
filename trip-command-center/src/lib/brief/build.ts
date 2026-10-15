@@ -62,6 +62,8 @@ export interface BriefPayload {
   stops: BriefStop[];
   weather: (DayWeather & { place: string }) | null;
   time_difference: string | null;
+  /** TSA PreCheck and Global Entry reminders for the day's flights. */
+  security_tips: string[];
   needs_review: { segment_id: string; title: string; reasons: string[] }[];
   push: { title: string; body: string };
 }
@@ -76,6 +78,25 @@ export interface BuildBriefInput {
   driveMinutes: (airport: string) => number | null;
   now: Date;
   weather: (lat: number, lng: number, tz: string, dateKey: string) => Promise<DayWeather | null>;
+  /** Someone on the account has TSA PreCheck or Global Entry (a trusted traveler document in the vault). */
+  trustedTraveler?: boolean;
+}
+
+function securityTips(day: Segment[], trusted: boolean): string[] {
+  if (!trusted) return [];
+  const tips: string[] = [];
+  const flights = day.filter((s) => s.type === "flight");
+  const usDeparture = flights.find((s) => countryOf(s.origin) === "US");
+  if (usDeparture) {
+    tips.push(
+      `TSA PreCheck at ${usDeparture.origin?.code ?? "the airport"}: use the PreCheck lane; the boarding pass should show TSA PRE.`,
+    );
+  }
+  const intoUs = flights.find((s) => countryOf(s.destination) === "US" && countryOf(s.origin) !== null && countryOf(s.origin) !== "US");
+  if (intoUs) {
+    tips.push(`Global Entry on arrival at ${intoUs.destination?.code ?? "the US airport"}: use the Global Entry lane at passport control.`);
+  }
+  return tips;
 }
 
 function countryOf(place: Place | null): string | null {
@@ -257,6 +278,7 @@ export async function buildBrief(input: BuildBriefInput): Promise<BriefPayload> 
     stops,
     weather,
     time_difference: timeDifference,
+    security_tips: securityTips(day, input.trustedTraveler ?? false),
     needs_review: needsReview,
     push: { title: pushTitle, body: bodyParts.join(" · ") || "Open the brief for tomorrow's plan." },
   };

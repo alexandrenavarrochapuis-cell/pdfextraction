@@ -82,6 +82,7 @@ const BoardingPassSchema = z.object({
   boarding_group: z.string().nullable(),
   boarding_time: z.string().nullable(),
   gate: z.string().nullable(),
+  tsa_precheck: z.boolean().nullable().describe("True when the pass shows TSA PRE or TSA Pre✓, false when it is a US departure without it"),
 });
 
 export const ExtractionSchema = z.object({

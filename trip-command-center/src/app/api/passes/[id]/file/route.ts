@@ -23,6 +23,8 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/passes/[id]
       "content-type": pass.content_type ?? "application/octet-stream",
       "content-disposition": `${pass.kind === "wallet" ? "attachment" : "inline"}; filename="${name}"`,
       "cache-control": "private, no-store",
+      "x-content-type-options": "nosniff",
+      "content-security-policy": "sandbox",
     },
   });
 }

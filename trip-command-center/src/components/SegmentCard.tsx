@@ -20,7 +20,7 @@ import {
   TYPE_LABEL,
   wazeUrl,
 } from "@/lib/present";
-import { airportMapUrl } from "@/lib/trips/insights";
+import { airportPageUrl } from "@/lib/trips/insights";
 import { ShareButton } from "./ShareButton";
 import { StatusBadge, TypeBadge } from "./Badges";
 import { CopyButton } from "./CopyButton";
@@ -204,10 +204,15 @@ export function SegmentCard({
               <PassIcon size={18} /> {passCount ? `Boarding passes (${passCount})` : "Add boarding pass"}
             </Link>
           ) : null}
-          {segment.type === "flight" && airportMapUrl(segment.origin?.code) ? (
-            <a href={airportMapUrl(segment.origin?.code)!} className={action} target="_blank" rel="noreferrer">
+          {segment.type === "flight" && airportPageUrl(segment.origin?.code) ? (
+            <Link href={airportPageUrl(segment.origin?.code, d.departure_gate)!} className={action}>
               <MapIcon size={18} /> {segment.origin?.code} airport map
-            </a>
+            </Link>
+          ) : null}
+          {segment.type === "flight" && airportPageUrl(segment.destination?.code) ? (
+            <Link href={airportPageUrl(segment.destination?.code)!} className={action}>
+              <MapIcon size={18} /> {segment.destination?.code} airport map
+            </Link>
           ) : null}
           {platform ? (
             <a href={PLATFORM_MANAGE[platform].url} className={action} target="_blank" rel="noreferrer">

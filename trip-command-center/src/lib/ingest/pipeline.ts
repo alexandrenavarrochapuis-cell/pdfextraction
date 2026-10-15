@@ -171,6 +171,7 @@ async function saveEmailPasses(
             to: p.destination,
             passengerName: p.passenger_name,
             seat: p.seat,
+            tsaPrecheck: p.tsa_precheck,
           },
         });
       }

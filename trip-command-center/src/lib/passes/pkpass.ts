@@ -13,8 +13,12 @@ export interface WalletPass {
   boardingGroup: string | null;
   boardingTime: string | null;
   passengerName: string | null;
+  /** True when the pass prints TSA PreCheck; false when it has fields but no mark. */
+  tsaPrecheck: boolean | null;
   fields: { label: string; value: string }[];
 }
+
+export const PRECHECK = /tsa\s*pre|pre\s*check|pre✓|tsapre/i;
 
 const FORMAT: Record<string, string> = {
   PKBarcodeFormatQR: "qrcode",
@@ -65,6 +69,7 @@ export function readPkpass(bytes: Uint8Array): WalletPass | null {
     boardingGroup: find(/group|zone/i),
     boardingTime: find(/board(ing)?[\s_-]?time|boards/i),
     passengerName: find(/passenger|name/i),
+    tsaPrecheck: fields.some((f) => PRECHECK.test(f.value) || PRECHECK.test(f.label)) ? true : fields.length ? false : null,
     fields: fields.map(({ label, value }) => ({ label, value })),
   };
 }

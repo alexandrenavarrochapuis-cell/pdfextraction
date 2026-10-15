@@ -12,6 +12,7 @@ export interface PassFacts {
   to?: string | null;
   passengerName?: string | null;
   seat?: string | null;
+  tsaPrecheck?: boolean | null;
 }
 
 function splitFlight(value: string | null | undefined): { carrier: string | null; number: string | null } {

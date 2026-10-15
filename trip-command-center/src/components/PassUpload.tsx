@@ -43,7 +43,7 @@ export function PassUpload({
           name="file"
           type="file"
           required
-          accept=".pkpass,application/vnd.apple.pkpass,application/pdf,image/*"
+          accept=".pkpass,application/vnd.apple.pkpass,application/pdf,image/png,image/jpeg,image/webp,image/heic"
           className="block min-h-12 w-full"
         />
       </label>
