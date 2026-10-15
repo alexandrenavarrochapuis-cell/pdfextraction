@@ -25,7 +25,7 @@ import { ShareButton } from "./ShareButton";
 import { StatusBadge, TypeBadge } from "./Badges";
 import { CopyButton } from "./CopyButton";
 import { TimePair } from "./TimePair";
-import { ChevronDownIcon, LinkIcon, MapIcon, PhoneIcon, PinIcon } from "./icons";
+import { ChevronDownIcon, LinkIcon, MapIcon, PassIcon, PhoneIcon, PinIcon } from "./icons";
 import { SplitButton } from "./TripActions";
 
 const DETAIL_LABELS: [keyof Segment["details"], string][] = [
@@ -65,6 +65,7 @@ export function SegmentCard({
   tz,
   homeTz,
   tripId,
+  passCount = 0,
 }: {
   segment: Segment;
   kind?: EntryKind;
@@ -72,6 +73,7 @@ export function SegmentCard({
   tz?: string;
   homeTz: string;
   tripId?: string;
+  passCount?: number;
 }) {
   const cancelled = segment.status === "cancelled";
   const review = segment.status === "needs_review";
@@ -194,6 +196,11 @@ export function SegmentCard({
                 </Link>
               ) : null}
             </>
+          ) : null}
+          {segment.type === "flight" ? (
+            <Link href={`/passes?segment=${segment.id}`} className={action}>
+              <PassIcon size={18} /> {passCount ? `Boarding passes (${passCount})` : "Add boarding pass"}
+            </Link>
           ) : null}
           {segment.type === "flight" && airportMapUrl(segment.origin?.code) ? (
             <a href={airportMapUrl(segment.origin?.code)!} className={action} target="_blank" rel="noreferrer">

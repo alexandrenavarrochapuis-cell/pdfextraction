@@ -133,6 +133,7 @@ describe("Claude path", () => {
             confidence: 0.4,
           },
         ],
+        boarding_passes: [],
       }),
     });
     const reasons = result.segments[0].review_reasons;

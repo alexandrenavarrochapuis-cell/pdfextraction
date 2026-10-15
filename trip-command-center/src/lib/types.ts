@@ -184,3 +184,54 @@ export interface ExtractedSegment {
   confidence: number;
   review_reasons: string[];
 }
+
+export interface Traveler {
+  id: string;
+  user_id: string;
+  name: string;
+  relation: "self" | "spouse" | "child" | "parent" | "other";
+  name_variants: string[];
+}
+
+export interface BoardingPass {
+  id: string;
+  user_id: string;
+  segment_id: string | null;
+  traveler_id: string | null;
+  passenger_name: string | null;
+  kind: "wallet" | "pdf" | "image" | "barcode";
+  storage_path: string | null;
+  content_type: string | null;
+  barcode_message: string | null;
+  barcode_format: string | null;
+  carrier: string | null;
+  flight_number: string | null;
+  flight_date: string | null;
+  origin: string | null;
+  destination: string | null;
+  seat: string | null;
+  boarding_group: string | null;
+  boarding_time: string | null;
+  gate: string | null;
+  source_email_id: string | null;
+  created_at: string;
+}
+
+export const DOCUMENT_KINDS = ["passport", "national_id", "drivers_license", "trusted_traveler", "visa", "other"] as const;
+export type DocumentKind = (typeof DOCUMENT_KINDS)[number];
+
+export interface TravelDocument {
+  id: string;
+  user_id: string;
+  traveler_id: string | null;
+  kind: DocumentKind;
+  label: string | null;
+  issuing_country: string | null;
+  expires_on: string | null;
+  ciphertext: string | null;
+  iv: string | null;
+  scan_path: string | null;
+  scan_iv: string | null;
+  scan_type: string | null;
+  created_at: string;
+}

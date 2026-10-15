@@ -69,12 +69,28 @@ const SegmentSchema = z.object({
   confidence: z.number().describe("0 to 1: how sure you are this segment's fields are right"),
 });
 
+const BoardingPassSchema = z.object({
+  attachment_filename: z.string().nullable().describe("File name of the PDF attachment holding this boarding pass"),
+  passenger_name: z.string().nullable().describe("As printed, e.g. NAVARRO/ALEXANDRE MR"),
+  flight_number: z.string().nullable(),
+  flight_date: z.string().nullable().describe("Local departure date, YYYY-MM-DD"),
+  origin: z.string().nullable().describe("Departure airport IATA code"),
+  destination: z.string().nullable().describe("Arrival airport IATA code"),
+  seat: z.string().nullable(),
+  boarding_group: z.string().nullable(),
+  boarding_time: z.string().nullable(),
+  gate: z.string().nullable(),
+});
+
 export const ExtractionSchema = z.object({
   is_travel_confirmation: z
     .boolean()
     .describe("True when the email confirms, changes or cancels a specific booking"),
-  email_kind: z.enum(["new_booking", "change", "cancellation", "reminder", "other"]),
+  email_kind: z.enum(["new_booking", "change", "cancellation", "reminder", "boarding_pass", "other"]),
   segments: z.array(SegmentSchema),
+  boarding_passes: z
+    .array(BoardingPassSchema)
+    .describe("One entry per passenger boarding pass found in attached PDFs; empty when there are none"),
 });
 
 export type ClaudeExtraction = z.infer<typeof ExtractionSchema>;
@@ -98,6 +114,8 @@ Times:
 Changes and cancellations:
 - For a schedule change, output the itinerary as it now stands, with action "confirmed".
 - For a cancellation, output each cancelled segment with action "cancelled", keeping its confirmation code and any times or airports the email gives.
+
+Boarding passes: when an attached PDF is a boarding pass, list it in boarding_passes (one entry per passenger) and also output the flight leg it is for.
 
 Forwarded mail: extract from the original message, not the forwarding wrapper.
 Marketing, newsletters, loyalty statements, surveys and receipts without an itinerary are not travel confirmations: set is_travel_confirmation to false and return no segments.

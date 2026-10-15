@@ -11,17 +11,47 @@
       "start_tz": "America/New_York",
       "end_local": "2027-06-25T08:50",
       "end_tz": "Europe/Paris",
-      "origin": { "name": "Atlanta", "code": "ATL", "city": "Atlanta", "country": "US", "address": null },
-      "destination": { "name": "Paris", "code": "CDG", "city": "Paris", "country": "FR", "address": null },
+      "origin": {
+        "name": "Atlanta",
+        "code": "ATL",
+        "city": "Atlanta",
+        "country": "US",
+        "address": null
+      },
+      "destination": {
+        "name": "Paris",
+        "code": "CDG",
+        "city": "Paris",
+        "country": "FR",
+        "address": null
+      },
       "details": {
-        "flight_number": "DL 84", "airline": "Delta Air Lines", "departure_terminal": "F", "departure_gate": null,
-        "arrival_terminal": null, "seat": null, "cabin": null, "record_locator": "G7XK2P", "check_in_url": null,
-        "passenger_names": null, "property_name": null, "address": null, "phone": null, "check_in_time": null,
-        "check_out_time": null, "room_type": null, "cancellation_deadline": null, "company": null,
-        "pickup_location": null, "dropoff_location": null, "reservation_number": null, "vehicle_class": null,
+        "flight_number": "DL 84",
+        "airline": "Delta Air Lines",
+        "departure_terminal": "F",
+        "departure_gate": null,
+        "arrival_terminal": null,
+        "seat": null,
+        "cabin": null,
+        "record_locator": "G7XK2P",
+        "check_in_url": null,
+        "passenger_names": null,
+        "property_name": null,
+        "address": null,
+        "phone": null,
+        "check_in_time": null,
+        "check_out_time": null,
+        "room_type": null,
+        "cancellation_deadline": null,
+        "company": null,
+        "pickup_location": null,
+        "dropoff_location": null,
+        "reservation_number": null,
+        "vehicle_class": null,
         "pickup_hours": null
       },
       "confidence": 0.93
     }
-  ]
+  ],
+  "boarding_passes": []
 }

@@ -11,6 +11,7 @@ import { regroupUser } from "../trips/regroup";
 import type { EmailForExtraction } from "./claude";
 import { extractSegments, type ExtractDeps } from "./extract";
 import { isAllowedForwarder } from "./verify";
+import { passKind, saveBoardingPass } from "../passes/store";
 
 const ATTACHMENT_BUCKET = "email-attachments";
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
@@ -77,8 +78,9 @@ export async function receiveEmail(db: SupabaseClient, resend: Resend, emailId: 
   return { status: "duplicate", rawId: existing.id as string };
 }
 
-function wantsAttachment(contentType: string, filename: string | null | undefined): "pdf" | "text" | null {
+function wantsAttachment(contentType: string, filename: string | null | undefined): "pdf" | "text" | "wallet" | null {
   const name = (filename ?? "").toLowerCase();
+  if (contentType === "application/vnd.apple.pkpass" || name.endsWith(".pkpass")) return "wallet";
   if (contentType === "application/pdf" || name.endsWith(".pdf")) return "pdf";
   if (contentType.startsWith("text/calendar") || name.endsWith(".ics")) return "text";
   return null;
@@ -89,14 +91,20 @@ async function collectAttachments(
   db: SupabaseClient,
   resend: Resend,
   raw: RawEmail,
-): Promise<{ stored: StoredAttachment[]; pdfs: EmailForExtraction["pdfs"]; texts: EmailForExtraction["textAttachments"] }> {
+): Promise<{
+  stored: StoredAttachment[];
+  pdfs: EmailForExtraction["pdfs"];
+  texts: EmailForExtraction["textAttachments"];
+  files: PassCandidate[];
+}> {
   const stored: StoredAttachment[] = raw.attachments ?? [];
   const pdfs: EmailForExtraction["pdfs"] = [];
   const texts: EmailForExtraction["textAttachments"] = [];
-  if (!raw.provider_email_id || !stored.length) return { stored, pdfs, texts };
+  const files: PassCandidate[] = [];
+  if (!raw.provider_email_id || !stored.length) return { stored, pdfs, texts, files };
 
   const { data: list, error } = await resend.emails.receiving.attachments.list({ emailId: raw.provider_email_id });
-  if (error || !list) return { stored, pdfs, texts };
+  if (error || !list) return { stored, pdfs, texts, files };
 
   for (const a of list.data) {
     const kind = wantsAttachment(a.content_type, a.filename);
@@ -111,13 +119,65 @@ async function collectAttachments(
       .upload(path, bytes, { contentType: a.content_type, upsert: true });
     const entry = stored.find((s) => s.id === a.id);
     if (entry && !upErr) entry.storage_path = path;
+    if (kind === "wallet" || kind === "pdf") {
+      files.push({ filename: a.filename ?? null, contentType: a.content_type, bytes });
+    }
     if (kind === "pdf" && pdfs.length < MAX_PDFS_FOR_EXTRACTION) {
       pdfs.push({ filename: a.filename ?? null, base64: Buffer.from(bytes).toString("base64") });
     } else if (kind === "text") {
       texts.push({ filename: a.filename ?? null, text: new TextDecoder().decode(bytes) });
     }
   }
-  return { stored, pdfs, texts };
+  return { stored, pdfs, texts, files };
+}
+
+interface PassCandidate {
+  filename: string | null;
+  contentType: string;
+  bytes: Uint8Array;
+}
+
+const PASS_FILENAME = /board|pass|embarq|bordkarte|imbarco/i;
+
+/**
+ * Wallet passes are always boarding passes; PDFs are when Claude says so or,
+ * on the markup path, when the file name says so.
+ */
+async function saveEmailPasses(
+  db: SupabaseClient,
+  raw: RawEmail,
+  files: PassCandidate[],
+  claudePasses: Awaited<ReturnType<typeof extractSegments>>["boardingPasses"],
+): Promise<void> {
+  for (const f of files) {
+    const kind = passKind(f.contentType, f.filename);
+    if (kind === "wallet") {
+      await saveBoardingPass(db, { userId: raw.user_id, bytes: f.bytes, filename: f.filename, contentType: f.contentType, sourceEmailId: raw.id, reference: new Date(raw.received_at) });
+      continue;
+    }
+    const described = claudePasses.filter((p) => p.attachment_filename && p.attachment_filename === f.filename);
+    if (described.length) {
+      for (const p of described) {
+        await saveBoardingPass(db, {
+          userId: raw.user_id,
+          bytes: f.bytes,
+          filename: f.filename,
+          contentType: f.contentType,
+          sourceEmailId: raw.id,
+          facts: {
+            flightNumber: p.flight_number,
+            date: p.flight_date,
+            from: p.origin,
+            to: p.destination,
+            passengerName: p.passenger_name,
+            seat: p.seat,
+          },
+        });
+      }
+    } else if (!claudePasses.length && PASS_FILENAME.test(f.filename ?? "")) {
+      await saveBoardingPass(db, { userId: raw.user_id, bytes: f.bytes, filename: f.filename, contentType: f.contentType, sourceEmailId: raw.id });
+    }
+  }
 }
 
 async function applyWrites(db: SupabaseClient, raw: RawEmail, writes: ReturnType<typeof planSegmentWrites>) {
@@ -145,7 +205,7 @@ export async function processRawEmail(
   const raw = data as RawEmail;
 
   try {
-    const { stored, pdfs, texts } = await collectAttachments(db, resend, raw);
+    const { stored, pdfs, texts, files } = await collectAttachments(db, resend, raw);
     await db.from("raw_emails").update({ attachments: stored }).eq("id", raw.id);
 
     const result = await extractSegments(
@@ -162,6 +222,7 @@ export async function processRawEmail(
     );
 
     if (!result.isTravel || result.segments.length === 0) {
+      await saveEmailPasses(db, raw, files, result.boardingPasses);
       await db
         .from("raw_emails")
         .update({ processing_status: "ignored", extraction_method: result.method, processing_error: null })
@@ -173,6 +234,7 @@ export async function processRawEmail(
     if (segErr) throw segErr;
     await applyWrites(db, raw, planSegmentWrites(result.segments, (existing ?? []) as Segment[], raw.id));
     await regroupUser(db, raw.user_id);
+    await saveEmailPasses(db, raw, files, result.boardingPasses);
     await db
       .from("raw_emails")
       .update({ processing_status: "processed", extraction_method: result.method, processing_error: null })

@@ -44,3 +44,31 @@ export async function deletePlace(form: FormData) {
   if (id) await db.from("places").delete().eq("id", id);
   revalidatePath("/settings");
 }
+
+const RELATIONS = new Set(["self", "spouse", "child", "parent", "other"]);
+
+export async function addTraveler(form: FormData) {
+  const { db, user } = await requireUser();
+  const name = String(form.get("name") ?? "").trim().slice(0, 120);
+  if (!name) return;
+  const relation = String(form.get("relation") ?? "other");
+  const variants = String(form.get("name_variants") ?? "")
+    .split(",")
+    .map((v) => v.trim().toUpperCase())
+    .filter(Boolean)
+    .slice(0, 10);
+  await db.from("travelers").insert({
+    user_id: user.id,
+    name,
+    relation: RELATIONS.has(relation) ? relation : "other",
+    name_variants: variants,
+  });
+  revalidatePath("/settings");
+}
+
+export async function deleteTraveler(form: FormData) {
+  const { db } = await requireUser();
+  const id = String(form.get("id") ?? "");
+  if (id) await db.from("travelers").delete().eq("id", id);
+  revalidatePath("/settings");
+}

@@ -9,7 +9,8 @@ import { userTimezone } from "@/lib/config";
 import { buildTimeline } from "@/lib/timeline";
 import { homeAirports } from "@/lib/config";
 import { airbnbSearchUrl, airportMapUrl, bookingSearchUrl, findConnections, findStayGaps, type Connection } from "@/lib/trips/insights";
-import type { SavedPlace } from "@/lib/types";
+import type { SavedPlace, TravelDocument, Traveler } from "@/lib/types";
+import { passportWarnings } from "@/lib/vault/expiry";
 import { formatMonthDay } from "@/lib/time";
 import { SegmentCard } from "@/components/SegmentCard";
 import { TripActions } from "@/components/TripActions";
@@ -59,6 +60,21 @@ async function Timeline({ params }: { params: Promise<{ id: string }> }) {
   const homeTz = userTimezone();
   const { days, unscheduled } = buildTimeline(segments);
   const connections = findConnections(segments);
+  const flightIds = segments.filter((s) => s.type === "flight").map((s) => s.id);
+  const { data: passRows } = flightIds.length
+    ? await db.from("boarding_passes").select("segment_id").in("segment_id", flightIds)
+    : { data: [] };
+  const [{ data: docRows }, { data: travelerRows }] = await Promise.all([
+    db.from("travel_documents").select("id, kind, traveler_id, expires_on").eq("kind", "passport"),
+    db.from("travelers").select("id, name"),
+  ]);
+  const warnings = passportWarnings((docRows ?? []) as TravelDocument[], trip.end_at, segments);
+  const travelerName = (id: string | null) =>
+    ((travelerRows ?? []) as Pick<Traveler, "id" | "name">[]).find((t) => t.id === id)?.name ?? "A traveler";
+  const passCounts = new Map<string, number>();
+  for (const p of (passRows ?? []) as { segment_id: string }[]) {
+    passCounts.set(p.segment_id, (passCounts.get(p.segment_id) ?? 0) + 1);
+  }
   const { data: homes } = await db.from("places").select("city").eq("kind", "home");
   const gaps = findStayGaps(
     segments,
@@ -80,6 +96,24 @@ async function Timeline({ params }: { params: Promise<{ id: string }> }) {
         {trip.end_at ? ` to ${formatMonthDay(trip.end_at, lastTz)}` : ""} · {segments.length}{" "}
         {segments.length === 1 ? "booking" : "bookings"}
       </p>
+
+      {warnings.length ? (
+        <div className="mb-5 space-y-1 rounded-2xl border-2 border-dashed border-ink bg-paper p-4">
+          <p className="flex items-center gap-2 font-bold">
+            <AlertIcon size={18} /> Passport check
+          </p>
+          {warnings.map((w) => (
+            <p key={w.document_id}>
+              {travelerName(w.traveler_id)}: passport expires {w.expires_on},{" "}
+              {w.days_after_trip < 0 ? "before this trip ends" : `${Math.round(w.days_after_trip / 30)} months after the trip`}.
+              Many countries require 6 months of validity.
+            </p>
+          ))}
+          <Link href="/vault" className="font-semibold underline">
+            Open passports and IDs
+          </Link>
+        </div>
+      ) : null}
 
       <ol className="space-y-6">
         {days.map((day) => (
@@ -105,6 +139,7 @@ async function Timeline({ params }: { params: Promise<{ id: string }> }) {
                       tz={e.tz}
                       homeTz={homeTz}
                       tripId={trip.id}
+                      passCount={passCounts.get(e.segment.id)}
                     />
                     {connection ? <ConnectionRow c={connection} /> : null}
                   </li>

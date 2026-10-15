@@ -3,12 +3,12 @@
 import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
 import { allowedForwarders, inboundAddress } from "@/lib/config";
-import type { Profile, SavedPlace } from "@/lib/types";
+import type { Profile, SavedPlace, Traveler } from "@/lib/types";
 import { CopyButton } from "@/components/CopyButton";
 import { PushToggle } from "@/components/PushToggle";
 import { Loading } from "@/components/Loading";
 import { signOut } from "../login/actions";
-import { addPlace, deletePlace, saveBriefSettings } from "./actions";
+import { addPlace, addTraveler, deletePlace, deleteTraveler, saveBriefSettings } from "./actions";
 
 const card = "rounded-2xl border border-line bg-paper p-4 space-y-3";
 
@@ -28,10 +28,12 @@ function hourLabel(h: number): string {
 
 async function SettingsBody() {
   const { db, user } = await requireUser();
-  const [{ data }, { data: placeRows }] = await Promise.all([
+  const [{ data }, { data: placeRows }, { data: travelerRows }] = await Promise.all([
     db.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     db.from("places").select("*").order("kind").order("label"),
+    db.from("travelers").select("*").order("name"),
   ]);
+  const travelers = (travelerRows ?? []) as Traveler[];
   const profile = data as Profile | null;
   const places = (placeRows ?? []) as SavedPlace[];
   const address = inboundAddress();
@@ -81,6 +83,45 @@ async function SettingsBody() {
           </ol>
         </details>
         <p className="text-muted">Anything else: forward the email to the inbound address by hand.</p>
+      </section>
+
+      <section className={card}>
+        <h2 className="text-xl font-bold">Travelers</h2>
+        <p className="text-muted">You and your family. Boarding passes and passports are filed under these names.</p>
+        {travelers.length ? (
+          <ul className="divide-y divide-line">
+            {travelers.map((t) => (
+              <li key={t.id} className="flex items-center justify-between gap-3 py-2">
+                <div>
+                  <p className="font-semibold">
+                    {t.name} <span className="text-sm font-normal text-muted">({t.relation})</span>
+                  </p>
+                  {t.name_variants.length ? <p className="text-sm text-muted">Also printed as {t.name_variants.join(", ")}</p> : null}
+                </div>
+                <form action={deleteTraveler}>
+                  <input type="hidden" name="id" value={t.id} />
+                  <button className="min-h-12 rounded-xl border border-line px-3 font-semibold">Remove</button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <form action={addTraveler} className="grid gap-2 sm:grid-cols-[1fr_auto]">
+          <input name="name" required placeholder="Full name as on the passport" className="min-h-12 rounded-xl border-2 border-line bg-paper px-3" />
+          <select name="relation" defaultValue={travelers.length ? "child" : "self"} className="min-h-12 rounded-xl border-2 border-line bg-paper px-3">
+            <option value="self">Me</option>
+            <option value="spouse">Spouse or partner</option>
+            <option value="child">Child</option>
+            <option value="parent">Parent</option>
+            <option value="other">Other</option>
+          </select>
+          <input
+            name="name_variants"
+            placeholder="Optional: name as airlines print it, e.g. NAVARRO/ALEXANDRE"
+            className="min-h-12 rounded-xl border-2 border-line bg-paper px-3 sm:col-span-2"
+          />
+          <button className="min-h-12 rounded-xl bg-accent px-5 font-bold text-white sm:col-span-2">Add traveler</button>
+        </form>
       </section>
 
       <section className={card}>

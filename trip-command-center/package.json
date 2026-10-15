@@ -17,6 +17,8 @@
     "@anthropic-ai/sdk": "^0.134.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.3",
+    "bwip-js": "^4.11.4",
+    "fflate": "^0.8.3",
     "leaflet": "^1.9.4",
     "next": "16.4.1",
     "react": "19.3.0",
