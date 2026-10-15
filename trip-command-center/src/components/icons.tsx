@@ -165,8 +165,54 @@ export const MapIcon = (p: IconProps) => (
   </Svg>
 );
 
+export const SteeringIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="12" r="2" />
+    <path d="M12 14v8" />
+    <path d="M10 12 2.5 10.5" />
+    <path d="m14 12 7.5-1.5" />
+  </Svg>
+);
+
+export const HomeIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M3 10.5 12 3l9 7.5" />
+    <path d="M5 9v12h14V9" />
+    <path d="M10 21v-6h4v6" />
+  </Svg>
+);
+
+export const PassIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3" y="2" width="18" height="20" rx="2" />
+    <path d="M7 7h10" />
+    <path d="M7 11h6" />
+    <path d="M7 16h1M10 16h1M13 16h1M16 16h1" />
+  </Svg>
+);
+
+export const LockIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="4" y="11" width="16" height="11" rx="2" />
+    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+  </Svg>
+);
+
+export const ShareIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 3v13" />
+    <path d="m7 8 5-5 5 5" />
+    <path d="M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8" />
+  </Svg>
+);
+
 export function TypeIcon({ type, ...p }: IconProps & { type: SegmentType }) {
   switch (type) {
+    case "drive":
+      return <SteeringIcon {...p} />;
+    case "stop":
+      return <HomeIcon {...p} />;
     case "flight":
       return <PlaneIcon {...p} />;
     case "hotel":

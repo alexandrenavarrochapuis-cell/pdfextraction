@@ -1,10 +1,11 @@
 // Bottom tab bar: large targets, icon plus label.
 
 import Link from "next/link";
-import { GearIcon, ListIcon, PlaneIcon } from "./icons";
+import { GearIcon, ListIcon, PassIcon, PlaneIcon } from "./icons";
 
 const TABS = [
   { href: "/", label: "Trips", Icon: PlaneIcon },
+  { href: "/passes", label: "Passes", Icon: PassIcon },
   { href: "/review", label: "Review", Icon: ListIcon },
   { href: "/settings", label: "Settings", Icon: GearIcon },
 ];

@@ -3,14 +3,22 @@
 import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
 import { allowedForwarders, inboundAddress } from "@/lib/config";
-import type { Profile } from "@/lib/types";
+import type { Profile, SavedPlace } from "@/lib/types";
 import { CopyButton } from "@/components/CopyButton";
 import { PushToggle } from "@/components/PushToggle";
 import { Loading } from "@/components/Loading";
 import { signOut } from "../login/actions";
-import { saveBriefSettings } from "./actions";
+import { addPlace, deletePlace, saveBriefSettings } from "./actions";
 
 const card = "rounded-2xl border border-line bg-paper p-4 space-y-3";
+
+const PLACE_KIND_LABEL: Record<SavedPlace["kind"], string> = {
+  home: "Home",
+  family: "Family",
+  friend: "Friends",
+  office: "Office",
+  other: "Other",
+};
 
 function hourLabel(h: number): string {
   const suffix = h < 12 ? "a.m." : "p.m.";
@@ -20,8 +28,12 @@ function hourLabel(h: number): string {
 
 async function SettingsBody() {
   const { db, user } = await requireUser();
-  const { data } = await db.from("profiles").select("*").eq("id", user.id).maybeSingle();
+  const [{ data }, { data: placeRows }] = await Promise.all([
+    db.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+    db.from("places").select("*").order("kind").order("label"),
+  ]);
   const profile = data as Profile | null;
+  const places = (placeRows ?? []) as SavedPlace[];
   const address = inboundAddress();
   const forwarders = allowedForwarders();
 
@@ -69,6 +81,50 @@ async function SettingsBody() {
           </ol>
         </details>
         <p className="text-muted">Anything else: forward the email to the inbound address by hand.</p>
+      </section>
+
+      <section className={card}>
+        <h2 className="text-xl font-bold">Places</h2>
+        <p className="text-muted">
+          Home, family, friends and office, for road trips and stops. A drive that ends at Home closes the trip.
+        </p>
+        {places.length ? (
+          <ul className="divide-y divide-line">
+            {places.map((p) => (
+              <li key={p.id} className="flex items-center justify-between gap-3 py-2">
+                <div>
+                  <p className="font-semibold">
+                    {p.label} <span className="text-sm font-normal text-muted">({PLACE_KIND_LABEL[p.kind]})</span>
+                  </p>
+                  <p className="text-sm text-muted">{p.address}</p>
+                  {p.lat == null ? <p className="text-sm font-semibold">Address not found on the map; check it.</p> : null}
+                </div>
+                <form action={deletePlace}>
+                  <input type="hidden" name="id" value={p.id} />
+                  <button className="min-h-12 rounded-xl border border-line px-3 font-semibold">Remove</button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <form action={addPlace} className="grid gap-2 sm:grid-cols-[1fr_auto]">
+          <input name="label" required placeholder="Name, e.g. Mom's house" className="min-h-12 rounded-xl border-2 border-line bg-paper px-3" />
+          <select name="kind" defaultValue="family" className="min-h-12 rounded-xl border-2 border-line bg-paper px-3">
+            {Object.entries(PLACE_KIND_LABEL).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
+          <input
+            name="address"
+            required
+            placeholder="Street address"
+            autoComplete="street-address"
+            className="min-h-12 rounded-xl border-2 border-line bg-paper px-3 sm:col-span-2"
+          />
+          <button className="min-h-12 rounded-xl bg-accent px-5 font-bold text-white sm:col-span-2">Save place</button>
+        </form>
       </section>
 
       <section className={card}>

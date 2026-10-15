@@ -3,10 +3,12 @@
 export const SEGMENT_TYPES = [
   "flight",
   "hotel",
-  "car",
+  "car", // rental car
   "train",
   "event",
   "other",
+  "drive", // road trip in your own car
+  "stop", // family, friends, office, in-person meeting
 ] as const;
 export type SegmentType = (typeof SEGMENT_TYPES)[number];
 
@@ -53,8 +55,36 @@ export interface SegmentDetails {
   reservation_number?: string | null;
   vehicle_class?: string | null;
   pickup_hours?: string | null;
+  // hotel, Booking.com, Airbnb, Vrbo
+  check_in_instructions?: string | null;
+  // drive
+  stops?: Place[] | null;
+  vehicle?: string | null;
+  ends_at_home?: boolean | null;
+  // stop
+  stop_kind?: StopKind | null;
+  place_id?: string | null;
   // fallback
   note?: string | null;
+}
+
+export const STOP_KINDS = ["family", "friend", "office", "meeting", "visit"] as const;
+export type StopKind = (typeof STOP_KINDS)[number];
+
+export const PLACE_KINDS = ["home", "family", "friend", "office", "other"] as const;
+export type PlaceKind = (typeof PLACE_KINDS)[number];
+
+export interface SavedPlace {
+  id: string;
+  user_id: string;
+  label: string;
+  kind: PlaceKind;
+  address: string;
+  city: string | null;
+  country: string | null;
+  lat: number | null;
+  lng: number | null;
+  tz: string | null;
 }
 
 export interface Segment {

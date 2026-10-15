@@ -7,11 +7,47 @@ import { requireUser } from "@/lib/auth";
 import { getTrip } from "@/lib/data";
 import { userTimezone } from "@/lib/config";
 import { buildTimeline } from "@/lib/timeline";
+import { homeAirports } from "@/lib/config";
+import { airbnbSearchUrl, airportMapUrl, bookingSearchUrl, findConnections, findStayGaps, type Connection } from "@/lib/trips/insights";
+import type { SavedPlace } from "@/lib/types";
 import { formatMonthDay } from "@/lib/time";
 import { SegmentCard } from "@/components/SegmentCard";
 import { TripActions } from "@/components/TripActions";
 import { Loading } from "@/components/Loading";
-import { ClockIcon } from "@/components/icons";
+import { AlertIcon, BedIcon, ClockIcon, MapIcon } from "@/components/icons";
+
+const linkBtn = "inline-flex min-h-12 items-center gap-2 rounded-xl border border-line bg-paper px-4 font-semibold";
+
+function duration(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h ? `${h} h ${String(m).padStart(2, "0")} min` : `${m} min`;
+}
+
+function ConnectionRow({ c }: { c: Connection }) {
+  const map = airportMapUrl(c.airport);
+  return (
+    <div
+      className={`ml-6 rounded-2xl bg-paper p-3 ${c.tight ? "border-2 border-dashed border-ink" : "border border-line"}`}
+    >
+      <p className="flex items-center gap-2 font-semibold">
+        {c.tight ? <AlertIcon size={18} /> : <ClockIcon size={18} />}
+        {c.tight ? "Tight connection" : "Connection"}: {duration(c.minutes)} in {c.airport}
+      </p>
+      {c.arrive_terminal || c.depart_terminal ? (
+        <p className="text-sm">
+          Arrive terminal {c.arrive_terminal ?? "?"}, depart terminal {c.depart_terminal ?? "?"}
+          {c.arrive_terminal && c.depart_terminal && c.arrive_terminal !== c.depart_terminal ? " (terminal change)" : ""}
+        </p>
+      ) : null}
+      {map ? (
+        <a href={map} className={`${linkBtn} mt-2`} target="_blank" rel="noreferrer">
+          <MapIcon size={18} /> Airport map
+        </a>
+      ) : null}
+    </div>
+  );
+}
 
 async function Timeline({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -22,6 +58,13 @@ async function Timeline({ params }: { params: Promise<{ id: string }> }) {
   const { data: others } = await db.from("trips").select("id, title").neq("id", id).order("start_at");
   const homeTz = userTimezone();
   const { days, unscheduled } = buildTimeline(segments);
+  const connections = findConnections(segments);
+  const { data: homes } = await db.from("places").select("city").eq("kind", "home");
+  const gaps = findStayGaps(
+    segments,
+    homeAirports(),
+    ((homes ?? []) as Pick<SavedPlace, "city">[]).map((h) => h.city).filter((c): c is string => !!c),
+  );
   const startTz = segments.find((s) => s.start_tz)?.start_tz ?? homeTz;
   const endTz = [...segments].reverse().find((s) => s.end_tz ?? s.start_tz);
   const lastTz = endTz?.end_tz ?? endTz?.start_tz ?? homeTz;
@@ -51,18 +94,45 @@ async function Timeline({ params }: { params: Promise<{ id: string }> }) {
               </Link>
             </div>
             <ul className="space-y-3">
-              {day.entries.map((e) => (
-                <li key={e.key}>
-                  <SegmentCard
-                    segment={e.segment}
-                    kind={e.kind}
-                    at={e.at}
-                    tz={e.tz}
-                    homeTz={homeTz}
-                    tripId={trip.id}
-                  />
-                </li>
-              ))}
+              {day.entries.map((e) => {
+                const connection = e.kind === "single" ? connections.find((c) => c.from_segment_id === e.segment.id) : undefined;
+                return (
+                  <li key={e.key} className="space-y-3">
+                    <SegmentCard
+                      segment={e.segment}
+                      kind={e.kind}
+                      at={e.at}
+                      tz={e.tz}
+                      homeTz={homeTz}
+                      tripId={trip.id}
+                    />
+                    {connection ? <ConnectionRow c={connection} /> : null}
+                  </li>
+                );
+              })}
+              {gaps
+                .filter((g) => g.check_in === day.dateKey)
+                .map((g) => (
+                  <li key={`gap-${g.check_in}`} className="space-y-2 rounded-2xl border-2 border-dashed border-ink bg-paper p-4">
+                    <p className="flex items-center gap-2 font-bold">
+                      <BedIcon size={18} /> No place to stay booked in {g.city}
+                    </p>
+                    <p>
+                      {g.check_in} to {g.check_out}. Forward the confirmation when you book, or add it by hand.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <a href={bookingSearchUrl(g)} className={linkBtn} target="_blank" rel="noreferrer">
+                        Search Booking.com
+                      </a>
+                      <a href={airbnbSearchUrl(g)} className={linkBtn} target="_blank" rel="noreferrer">
+                        Search Airbnb
+                      </a>
+                      <Link href="/add?type=hotel" className={linkBtn}>
+                        Add a stay
+                      </Link>
+                    </div>
+                  </li>
+                ))}
             </ul>
           </li>
         ))}
@@ -80,6 +150,10 @@ async function Timeline({ params }: { params: Promise<{ id: string }> }) {
           </ul>
         </section>
       ) : null}
+
+      <Link href="/add" className={`${linkBtn} mt-6`}>
+        + Add a drive, stop or stay
+      </Link>
 
       <div className="mt-8">
         <TripActions tripId={trip.id} title={trip.title} otherTrips={(others ?? []) as { id: string; title: string }[]} />

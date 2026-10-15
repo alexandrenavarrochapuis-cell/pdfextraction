@@ -55,6 +55,7 @@ const DETAIL_KEYS: Record<SegmentType, (keyof SegmentDetails)[]> = {
     "check_out_time",
     "room_type",
     "cancellation_deadline",
+    "check_in_instructions",
   ],
   car: [
     "company",
@@ -67,6 +68,8 @@ const DETAIL_KEYS: Record<SegmentType, (keyof SegmentDetails)[]> = {
   ],
   event: ["address", "phone", "note"],
   other: ["address", "phone", "note"],
+  drive: ["stops", "vehicle", "ends_at_home", "note"],
+  stop: ["stop_kind", "address", "phone", "note", "place_id"],
 };
 
 /** Keep only the detail keys that belong to the segment type, dropping empties. */
@@ -134,9 +137,10 @@ function anchors(type: SegmentType): { start: "origin" | "destination"; end: "or
     case "flight":
     case "train":
     case "car":
+    case "drive":
       return { start: "origin", end: "destination" };
     default:
-      // hotel and event: the single place is stored as the destination
+      // hotel, event and stop: the single place is stored as the destination
       return { start: "destination", end: "destination" };
   }
 }
@@ -162,6 +166,13 @@ export function requiredMissing(seg: ExtractedSegment): string[] {
       break;
     case "car":
       if (!seg.origin?.city && !seg.details.pickup_location) missing.push("pickup location");
+      break;
+    case "drive":
+      if (!seg.origin?.address && !seg.origin?.city) missing.push("starting address");
+      if (!seg.destination?.address && !seg.destination?.city) missing.push("destination address");
+      break;
+    case "stop":
+      if (!seg.destination?.address && !seg.destination?.city) missing.push("location");
       break;
     default:
       break;
@@ -202,7 +213,7 @@ export async function finalizeDraft(draft: DraftSegment, geocode: Geocoder): Pro
   const endTz =
     zoneOf(endAnchor) ??
     (isValidTimeZone(draft.end_tz) ? draft.end_tz : null) ??
-    (draft.type === "car" ? startTz : null) ??
+    (draft.type === "car" || draft.type === "drive" ? startTz : null) ??
     (startAnchor === endAnchor ? startTz : null);
 
   let startLocal = draft.start_local;

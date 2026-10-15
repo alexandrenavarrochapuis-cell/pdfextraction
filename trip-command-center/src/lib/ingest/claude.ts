@@ -9,7 +9,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import * as z from "zod/v4";
 import { EXTRACTION_MODEL } from "../config";
-import { SEGMENT_TYPES } from "../types";
+import { SEGMENT_TYPES, STOP_KINDS } from "../types";
 import type { DraftSegment } from "./draft";
 
 const PlaceSchema = z.object({
@@ -44,6 +44,11 @@ const DetailsSchema = z.object({
   reservation_number: z.string().nullable(),
   vehicle_class: z.string().nullable(),
   pickup_hours: z.string().nullable().describe("Rental branch opening hours"),
+  check_in_instructions: z
+    .string()
+    .nullable()
+    .describe("Self check-in or arrival instructions for a stay (key box, access code, host contact)"),
+  stop_kind: z.enum(STOP_KINDS).nullable().describe("For stop segments: what kind of stop"),
 });
 
 const SegmentSchema = z.object({
@@ -78,9 +83,11 @@ const SYSTEM_PROMPT = `You extract travel itinerary data from confirmation email
 
 Output one segment per thing that happens at a time and place:
 - Flights: one segment per leg. A connection or a round trip is several segments. origin is the departure airport, destination the arrival airport.
-- Hotels: one segment per stay. destination is the hotel (name, city, country, address). start is check-in, end is check-out.
-- Rental cars: one segment per rental. origin is the pickup branch, destination the drop-off branch.
-- Trains: one segment per leg, like flights. Events (conferences, tours, tickets): destination is the venue.
+- Stays (type "hotel"): hotels and also Booking.com, Airbnb, Vrbo, Expedia and other rentals. One segment per stay. destination is the property (name, city, country, address). start is check-in, end is check-out. provider is the platform or brand the booking was made with ("Booking.com", "Airbnb", "Marriott"). Put self check-in or arrival instructions in check_in_instructions.
+- Rental cars (type "car"): one segment per rental. origin is the pickup branch, destination the drop-off branch.
+- Trains: one segment per leg, like flights, including European rail (SNCF Connect, Trainline, Eurostar, Deutsche Bahn, Trenitalia, Italo, Renfe, SBB, OBB). origin and destination are stations with their city; put coach and seat in seat, e.g. "Coach 7, Seat 45".
+- Events (conferences, tours, tickets): destination is the venue.
+- In-person meetings (type "stop", stop_kind "meeting"): a forwarded calendar invitation with a physical location. destination is the meeting place. Invitations that only have an online meeting link are not travel.
 
 Times:
 - Copy each time as printed, as local wall-clock time at the place it happens. Never convert between zones.

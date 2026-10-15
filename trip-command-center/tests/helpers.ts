@@ -53,12 +53,14 @@ export const stubGeocoder: Geocoder = async (city) => PLACES[city.toLowerCase()]
 /** Claude stand-in that replays `<fixture>.claude.json`, or fails the test if it was not expected. */
 export function cannedClaude(emlPath: string): ClaudeExtractor & { calls: number } {
   const canned = emlPath.replace(/\.eml$/, ".claude.json");
-  const fn = (async () => {
-    fn.calls += 1;
-    if (!existsSync(canned)) throw new Error(`Claude was called for ${emlPath} but no canned output exists`);
-    return JSON.parse(readFileSync(canned, "utf8")) as ClaudeExtraction;
-  }) as ClaudeExtractor & { calls: number };
-  fn.calls = 0;
+  const fn = Object.assign(
+    async () => {
+      fn.calls += 1;
+      if (!existsSync(canned)) throw new Error(`Claude was called for ${emlPath} but no canned output exists`);
+      return JSON.parse(readFileSync(canned, "utf8")) as ClaudeExtraction;
+    },
+    { calls: 0 },
+  );
   return fn;
 }
 

@@ -5,7 +5,23 @@ import Link from "next/link";
 import type { Segment } from "@/lib/types";
 import type { EntryKind } from "@/lib/timeline";
 import { ENTRY_LABEL } from "@/lib/timeline";
-import { mapsUrl, placeLong, segmentAddress, segmentTitle, telUrl, TYPE_LABEL } from "@/lib/present";
+import {
+  appleDirectionsUrl,
+  googleDirectionsUrl,
+  mapsUrl,
+  placeLong,
+  placeText,
+  PLATFORM_MANAGE,
+  segmentAddress,
+  segmentTitle,
+  stayPlatform,
+  STOP_KIND_LABEL,
+  telUrl,
+  TYPE_LABEL,
+  wazeUrl,
+} from "@/lib/present";
+import { airportMapUrl } from "@/lib/trips/insights";
+import { ShareButton } from "./ShareButton";
 import { StatusBadge, TypeBadge } from "./Badges";
 import { CopyButton } from "./CopyButton";
 import { TimePair } from "./TimePair";
@@ -34,6 +50,8 @@ const DETAIL_LABELS: [keyof Segment["details"], string][] = [
   ["reservation_number", "Reservation"],
   ["vehicle_class", "Vehicle"],
   ["pickup_hours", "Branch hours"],
+  ["check_in_instructions", "Arrival instructions"],
+  ["vehicle", "Car"],
   ["note", "Note"],
 ];
 
@@ -61,7 +79,10 @@ export function SegmentCard({
   const address = segmentAddress(segment);
   const entryLabel = ENTRY_LABEL[kind];
   const typeLabel = entryLabel ? `${TYPE_LABEL[segment.type]} · ${entryLabel}` : TYPE_LABEL[segment.type];
-  const showArrival = segment.type === "flight" || segment.type === "train";
+  const showArrival = segment.type === "flight" || segment.type === "train" || segment.type === "drive";
+  const platform = segment.type === "hotel" ? stayPlatform(segment) : null;
+  const stops = segment.type === "drive" ? (d.stops ?? []) : [];
+  const driveDest = segment.type === "drive" ? segment.destination : null;
 
   return (
     <details
@@ -104,17 +125,32 @@ export function SegmentCard({
               <dd className="font-mono text-lg font-bold">{segment.confirmation_code}</dd>
             </>
           ) : null}
-          {segment.origin && (segment.type === "flight" || segment.type === "train") ? (
+          {segment.type === "stop" && d.stop_kind ? (
+            <>
+              <dt className="text-muted">Kind</dt>
+              <dd>{STOP_KIND_LABEL[d.stop_kind]}</dd>
+            </>
+          ) : null}
+          {segment.origin && (segment.type === "flight" || segment.type === "train" || segment.type === "drive") ? (
             <>
               <dt className="text-muted">From</dt>
-              <dd>{placeLong(segment.origin)}</dd>
+              <dd>{segment.type === "drive" ? placeText(segment.origin) : placeLong(segment.origin)}</dd>
+              {stops.map((stop, i) => (
+                <div key={i} className="contents">
+                  <dt className="text-muted">Stop {i + 1}</dt>
+                  <dd>{[stop.name, placeText(stop)].filter(Boolean).join(" · ")}</dd>
+                </div>
+              ))}
               <dt className="text-muted">To</dt>
-              <dd>{placeLong(segment.destination)}</dd>
+              <dd>
+                {segment.type === "drive" && segment.destination ? placeText(segment.destination) : placeLong(segment.destination)}
+              </dd>
             </>
           ) : null}
           {DETAIL_LABELS.map(([key, label]) => {
             const value = d[key];
             if (value === null || value === undefined || value === "" || key === "flight_number") return null;
+            if (typeof value === "object" && !Array.isArray(value)) return null;
             return (
               <div key={key} className="contents">
                 <dt className="text-muted">{label}</dt>
@@ -131,12 +167,50 @@ export function SegmentCard({
               <MapIcon size={18} /> Track flight
             </Link>
           ) : null}
+          {driveDest ? (
+            <>
+              <a
+                href={googleDirectionsUrl(segment.origin, driveDest, stops)}
+                className={action}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <MapIcon size={18} /> Start GPS in Google Maps
+              </a>
+              <a href={appleDirectionsUrl(segment.origin, stops[0] ?? driveDest)} className={action} target="_blank" rel="noreferrer">
+                <PinIcon size={18} /> Apple Maps{stops.length ? " to stop 1" : ""}
+              </a>
+              <a href={wazeUrl(stops[0] ?? driveDest)} className={action} target="_blank" rel="noreferrer">
+                <PinIcon size={18} /> Waze{stops.length ? " to stop 1" : ""}
+              </a>
+              <ShareButton
+                title={stops[0]?.name ?? driveDest.name ?? "Destination"}
+                text={placeText(stops[0] ?? driveDest)}
+                label={`Send ${stops.length ? "first stop" : "destination"} to car`}
+              />
+              {tripId ? (
+                <Link href={`/trips/${tripId}/drive/${segment.id}`} className={action}>
+                  <MapIcon size={18} /> Route map
+                </Link>
+              ) : null}
+            </>
+          ) : null}
+          {segment.type === "flight" && airportMapUrl(segment.origin?.code) ? (
+            <a href={airportMapUrl(segment.origin?.code)!} className={action} target="_blank" rel="noreferrer">
+              <MapIcon size={18} /> {segment.origin?.code} airport map
+            </a>
+          ) : null}
+          {platform ? (
+            <a href={PLATFORM_MANAGE[platform].url} className={action} target="_blank" rel="noreferrer">
+              <LinkIcon size={18} /> {PLATFORM_MANAGE[platform].label}
+            </a>
+          ) : null}
           {d.check_in_url ? (
             <a href={d.check_in_url} className={action} target="_blank" rel="noreferrer">
               <LinkIcon size={18} /> Check in
             </a>
           ) : null}
-          {address ? (
+          {address && segment.type !== "drive" ? (
             <a href={mapsUrl(address)} className={action} target="_blank" rel="noreferrer">
               <PinIcon size={18} /> Open in Maps
             </a>

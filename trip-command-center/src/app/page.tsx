@@ -99,7 +99,12 @@ async function TripsList() {
 export default function TripsPage() {
   return (
     <>
-      <h1 className="mb-4 text-3xl font-bold">Trips</h1>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h1 className="text-3xl font-bold">Trips</h1>
+        <Link href="/add" className="inline-flex min-h-12 items-center rounded-xl bg-accent px-4 font-bold text-white">
+          + Add
+        </Link>
+      </div>
       <Suspense fallback={<Loading label="Loading trips…" />}>
         <TripsList />
       </Suspense>

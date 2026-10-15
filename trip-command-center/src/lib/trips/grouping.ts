@@ -43,6 +43,7 @@ export function segmentCity(seg: Pick<Segment, "type" | "origin" | "destination"
       return placeCity(seg.origin) ?? placeCity(seg.destination);
     case "flight":
     case "train":
+    case "drive":
       return placeCity(seg.destination);
     default:
       return placeCity(seg.destination) ?? placeCity(seg.origin);
@@ -59,6 +60,7 @@ function homeCities(homeAirports: string[]): Set<string> {
 }
 
 export function landsHome(seg: Segment, homeAirports: string[]): boolean {
+  if (seg.type === "drive") return seg.details?.ends_at_home === true;
   if (seg.type !== "flight" && seg.type !== "train") return false;
   const code = seg.destination?.code?.toUpperCase();
   return !!code && homeAirports.includes(code);
