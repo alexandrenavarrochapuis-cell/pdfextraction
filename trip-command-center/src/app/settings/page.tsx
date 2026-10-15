@@ -8,7 +8,16 @@ import { CopyButton } from "@/components/CopyButton";
 import { PushToggle } from "@/components/PushToggle";
 import { Loading } from "@/components/Loading";
 import { signOut } from "../login/actions";
-import { addPlace, addTraveler, deletePlace, deleteTraveler, saveBriefSettings } from "./actions";
+import {
+  addPlace,
+  addTraveler,
+  deletePlace,
+  deleteTraveler,
+  disableCalendarFeed,
+  rotateCalendarToken,
+  saveBriefSettings,
+} from "./actions";
+import { headers } from "next/headers";
 
 const card = "rounded-2xl border border-line bg-paper p-4 space-y-3";
 
@@ -34,6 +43,10 @@ async function SettingsBody() {
     db.from("travelers").select("*").order("name"),
   ]);
   const travelers = (travelerRows ?? []) as Traveler[];
+  const h = await headers();
+  const host = h.get("host");
+  const calendarToken = (data as { calendar_token?: string | null } | null)?.calendar_token ?? null;
+  const feedUrl = calendarToken && host ? `https://${host}/api/calendar/${calendarToken}.ics` : null;
   const profile = data as Profile | null;
   const places = (placeRows ?? []) as SavedPlace[];
   const address = inboundAddress();
@@ -166,6 +179,45 @@ async function SettingsBody() {
           />
           <button className="min-h-12 rounded-xl bg-accent px-5 font-bold text-white sm:col-span-2">Save place</button>
         </form>
+      </section>
+
+      <section className={card}>
+        <h2 className="text-xl font-bold">Calendar feed</h2>
+        <p className="text-muted">
+          Every booking in your calendar, kept up to date. Confirmation codes are not included. Anyone with the link can
+          see your itinerary, so make a new link if it leaks.
+        </p>
+        {feedUrl ? (
+          <>
+            <p className="break-all font-mono text-sm">{feedUrl}</p>
+            <div className="flex flex-wrap gap-2">
+              <CopyButton value={feedUrl} label="Copy link" />
+              <a
+                href={feedUrl.replace(/^https:/, "webcal:")}
+                className="inline-flex min-h-12 items-center rounded-xl border border-line bg-paper px-4 font-semibold"
+              >
+                Subscribe on this iPhone
+              </a>
+            </div>
+            <ul className="list-disc space-y-1 pl-6 text-sm">
+              <li>Outlook: Calendar, Add calendar, Subscribe from web, paste the link.</li>
+              <li>Google Calendar: Other calendars, +, From URL, paste the link.</li>
+              <li>Apple Calendar: tap Subscribe on this iPhone.</li>
+            </ul>
+            <div className="flex flex-wrap gap-2">
+              <form action={rotateCalendarToken}>
+                <button className="min-h-12 rounded-xl border border-line px-4 font-semibold">Make a new link</button>
+              </form>
+              <form action={disableCalendarFeed}>
+                <button className="min-h-12 rounded-xl border border-line px-4 font-semibold">Turn off</button>
+              </form>
+            </div>
+          </>
+        ) : (
+          <form action={rotateCalendarToken}>
+            <button className="min-h-12 rounded-xl bg-accent px-5 font-bold text-white">Create calendar link</button>
+          </form>
+        )}
       </section>
 
       <section className={card}>

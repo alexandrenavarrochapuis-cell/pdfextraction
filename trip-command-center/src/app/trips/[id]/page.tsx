@@ -11,6 +11,10 @@ import { homeAirports } from "@/lib/config";
 import { airbnbSearchUrl, airportMapUrl, bookingSearchUrl, findConnections, findStayGaps, type Connection } from "@/lib/trips/insights";
 import type { SavedPlace, TravelDocument, Traveler } from "@/lib/types";
 import { passportWarnings } from "@/lib/vault/expiry";
+import { countryName, tripCountries } from "@/lib/assistant/countries";
+import { fetchPerDiem, FOREIGN_PER_DIEM_URL, stateCode } from "@/lib/assistant/perdiem";
+import { openMeteoGeocoder } from "@/lib/geo";
+import { CountryBriefCard } from "@/components/CountryBriefCard";
 import { formatMonthDay } from "@/lib/time";
 import { SegmentCard } from "@/components/SegmentCard";
 import { TripActions } from "@/components/TripActions";
@@ -68,6 +72,14 @@ async function Timeline({ params }: { params: Promise<{ id: string }> }) {
     db.from("travel_documents").select("id, kind, traveler_id, expires_on").eq("kind", "passport"),
     db.from("travelers").select("id, name"),
   ]);
+  const countries = tripCountries(segments);
+  let perDiem = null;
+  if (!countries.length && trip.primary_city && trip.start_at) {
+    const geo = await openMeteoGeocoder(trip.primary_city, "US");
+    const st = stateCode(geo?.region);
+    if (st) perDiem = await fetchPerDiem(trip.primary_city, st, new Date(trip.start_at));
+  }
+  const stays = segments.filter((s) => s.type === "hotel" && s.status !== "cancelled" && s.details?.rate_per_night);
   const warnings = passportWarnings((docRows ?? []) as TravelDocument[], trip.end_at, segments);
   const travelerName = (id: string | null) =>
     ((travelerRows ?? []) as Pick<Traveler, "id" | "name">[]).find((t) => t.id === id)?.name ?? "A traveler";
@@ -112,6 +124,43 @@ async function Timeline({ params }: { params: Promise<{ id: string }> }) {
           <Link href="/vault" className="font-semibold underline">
             Open passports and IDs
           </Link>
+        </div>
+      ) : null}
+
+      {perDiem ? (
+        <div className="mb-5 space-y-1 rounded-2xl border border-line bg-paper p-4">
+          <p className="font-bold">
+            GSA per diem, {perDiem.city}, {perDiem.state} (FY{perDiem.fiscal_year})
+          </p>
+          <p>
+            Lodging ${perDiem.lodging} a night before taxes · Meals and incidentals ${perDiem.mie} a day
+          </p>
+          {stays.map((s) => {
+            const rate = s.details.rate_per_night!;
+            const usd = !s.details.currency || s.details.currency === "USD";
+            const over = usd && rate > perDiem.lodging;
+            return (
+              <p key={s.id} className={over ? "font-semibold" : ""}>
+                {over ? <AlertIcon size={16} className="mr-1 inline" /> : null}
+                {s.details.property_name ?? "Stay"}: {rate} {s.details.currency ?? "USD"} a night,{" "}
+                {!usd ? "different currency" : over ? `$${Math.round(rate - perDiem.lodging)} over the lodging rate` : "within the lodging rate"}
+              </p>
+            );
+          })}
+        </div>
+      ) : null}
+      {countries.length ? (
+        <div className="mb-5 space-y-3">
+          {countries.map((c) => (
+            <CountryBriefCard key={c} code={c} name={countryName(c)} />
+          ))}
+          <p className="text-sm text-muted">
+            Foreign per diem rates come from the{" "}
+            <a href={FOREIGN_PER_DIEM_URL} className="underline" target="_blank" rel="noreferrer">
+              State Department tables
+            </a>
+            .
+          </p>
         </div>
       ) : null}
 

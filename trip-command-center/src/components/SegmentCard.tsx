@@ -51,6 +51,8 @@ const DETAIL_LABELS: [keyof Segment["details"], string][] = [
   ["vehicle_class", "Vehicle"],
   ["pickup_hours", "Branch hours"],
   ["check_in_instructions", "Arrival instructions"],
+  ["rate_per_night", "Nightly rate"],
+  ["currency", "Currency"],
   ["vehicle", "Car"],
   ["note", "Note"],
 ];

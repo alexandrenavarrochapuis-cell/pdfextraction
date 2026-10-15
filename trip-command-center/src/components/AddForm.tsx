@@ -111,12 +111,30 @@ function clean(v: PlaceValue): PlaceValue | undefined {
   return Object.keys(out).length ? out : undefined;
 }
 
-export function AddForm({ places, initialKind = "drive" }: { places: SavedPlace[]; initialKind?: Kind }) {
+export interface AddPrefill {
+  property_name?: string;
+  provider?: string;
+  address?: string;
+  start_local?: string;
+  end_local?: string;
+}
+
+export function AddForm({
+  places,
+  initialKind = "drive",
+  prefill = {},
+}: {
+  places: SavedPlace[];
+  initialKind?: Kind;
+  prefill?: AddPrefill;
+}) {
   const router = useRouter();
   const home = places.find((p) => p.kind === "home");
   const [kind, setKind] = useState<Kind>(initialKind);
   const [origin, setOrigin] = useState<PlaceValue>(home ? { place_id: home.id } : {});
-  const [destination, setDestination] = useState<PlaceValue>({});
+  const [destination, setDestination] = useState<PlaceValue>(
+    prefill.address ? { address: prefill.address, label: prefill.property_name } : {},
+  );
   const [stops, setStops] = useState<PlaceValue[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -195,7 +213,7 @@ export function AddForm({ places, initialKind = "drive" }: { places: SavedPlace[
         <div className="grid gap-3 sm:grid-cols-2">
           <label className={labelCls}>
             <span className="font-semibold">Booked with</span>
-            <select name="provider" className={input} defaultValue="Booking.com">
+            <select name="provider" className={input} defaultValue={prefill.provider ? "" : "Booking.com"}>
               <option>Booking.com</option>
               <option>Airbnb</option>
               <option>Vrbo</option>
@@ -205,7 +223,7 @@ export function AddForm({ places, initialKind = "drive" }: { places: SavedPlace[
           </label>
           <label className={labelCls}>
             <span className="font-semibold">Property name</span>
-            <input name="property_name" className={input} />
+            <input name="property_name" className={input} defaultValue={prefill.property_name} />
           </label>
         </div>
       ) : null}
@@ -288,14 +306,14 @@ export function AddForm({ places, initialKind = "drive" }: { places: SavedPlace[
           <span className="font-semibold">
             {kind === "hotel" ? "Check-in" : kind === "drive" ? "Leave" : "Starts"} (local time there)
           </span>
-          <input name="start_local" type="datetime-local" required className={input} />
+          <input name="start_local" type="datetime-local" required className={input} defaultValue={prefill.start_local} />
         </label>
         <label className={labelCls}>
           <span className="font-semibold">
             {kind === "hotel" ? "Check-out" : kind === "drive" || kind === "flight" || kind === "train" ? "Arrive" : "Ends"}{" "}
             (optional)
           </span>
-          <input name="end_local" type="datetime-local" className={input} />
+          <input name="end_local" type="datetime-local" className={input} defaultValue={prefill.end_local} />
         </label>
       </div>
 

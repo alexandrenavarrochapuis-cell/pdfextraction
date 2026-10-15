@@ -101,9 +101,14 @@ export default function TripsPage() {
     <>
       <div className="mb-4 flex items-center justify-between gap-3">
         <h1 className="text-3xl font-bold">Trips</h1>
-        <Link href="/add" className="inline-flex min-h-12 items-center rounded-xl bg-accent px-4 font-bold text-white">
-          + Add
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/plan" className="inline-flex min-h-12 items-center rounded-xl border-2 border-ink bg-paper px-4 font-bold">
+            Plan
+          </Link>
+          <Link href="/add" className="inline-flex min-h-12 items-center rounded-xl bg-accent px-4 font-bold text-white">
+            + Add
+          </Link>
+        </div>
       </div>
       <Suspense fallback={<Loading label="Loading trips…" />}>
         <TripsList />

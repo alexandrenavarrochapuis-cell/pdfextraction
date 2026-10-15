@@ -26,6 +26,8 @@ export interface DraftSegment {
 export interface GeoResult {
   name: string;
   country: string | null;
+  /** State or region, e.g. "Florida". */
+  region?: string | null;
   lat: number;
   lng: number;
   tz: string;
@@ -56,6 +58,8 @@ const DETAIL_KEYS: Record<SegmentType, (keyof SegmentDetails)[]> = {
     "room_type",
     "cancellation_deadline",
     "check_in_instructions",
+    "rate_per_night",
+    "currency",
   ],
   car: [
     "company",

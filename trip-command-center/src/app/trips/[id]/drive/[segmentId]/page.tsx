@@ -14,6 +14,8 @@ import { ShareButton } from "@/components/ShareButton";
 import { TimePair } from "@/components/TimePair";
 import { Loading } from "@/components/Loading";
 import { MapIcon, PinIcon } from "@/components/icons";
+import { ReorderStops } from "@/components/ReorderStops";
+import { suggestStopOrder } from "@/lib/trips/optimize";
 
 const action = "inline-flex min-h-12 items-center gap-2 rounded-xl border border-line bg-paper px-4 font-semibold";
 
@@ -34,6 +36,7 @@ async function Drive({ params }: { params: Promise<{ id: string; segmentId: stri
     ...stops.map((s, i) => point(s, s.name ?? s.city ?? `Stop ${i + 1}`, String(i + 1))),
     point(seg.destination, seg.destination.name ?? seg.destination.city ?? "Destination", "E"),
   ].filter((p): p is RoutePoint => !!p);
+  const suggestion = suggestStopOrder(seg.origin, stops, seg.destination);
   const legs: { label: string; place: Place }[] = [
     ...stops.map((s, i) => ({ label: `Stop ${i + 1}${s.name ? `: ${s.name}` : ""}`, place: s })),
     { label: `Destination${seg.destination.name ? `: ${seg.destination.name}` : ""}`, place: seg.destination },
@@ -60,6 +63,17 @@ async function Drive({ params }: { params: Promise<{ id: string; segmentId: stri
       >
         <MapIcon /> Start GPS in Google Maps (all stops)
       </a>
+      {suggestion ? (
+        <div className="mb-4">
+          <ReorderStops
+            segmentId={seg.id}
+            order={suggestion.order}
+            labels={stops.map((s, i) => s.name ?? s.city ?? `Stop ${i + 1}`)}
+            currentKm={suggestion.currentKm}
+            suggestedKm={suggestion.suggestedKm}
+          />
+        </div>
+      ) : null}
       {points.length >= 2 ? (
         <RouteMapClient points={points} />
       ) : (

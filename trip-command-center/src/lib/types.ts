@@ -57,6 +57,8 @@ export interface SegmentDetails {
   pickup_hours?: string | null;
   // hotel, Booking.com, Airbnb, Vrbo
   check_in_instructions?: string | null;
+  rate_per_night?: number | null;
+  currency?: string | null;
   // drive
   stops?: Place[] | null;
   vehicle?: string | null;

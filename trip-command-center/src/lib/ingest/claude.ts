@@ -49,6 +49,8 @@ const DetailsSchema = z.object({
     .nullable()
     .describe("Self check-in or arrival instructions for a stay (key box, access code, host contact)"),
   stop_kind: z.enum(STOP_KINDS).nullable().describe("For stop segments: what kind of stop"),
+  rate_per_night: z.number().nullable().describe("For stays: average nightly room rate before taxes, as a number"),
+  currency: z.string().nullable().describe("ISO 4217 code of rate_per_night, e.g. USD"),
 });
 
 const SegmentSchema = z.object({

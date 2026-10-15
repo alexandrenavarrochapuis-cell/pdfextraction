@@ -10,8 +10,10 @@ import { Loading } from "@/components/Loading";
 
 const KINDS = new Set(["drive", "stop", "hotel", "train", "flight", "event"]);
 
-async function Body({ searchParams }: { searchParams: Promise<{ type?: string }> }) {
-  const { type } = await searchParams;
+type AddParams = { type?: string; name?: string; provider?: string; address?: string; checkin?: string; checkout?: string };
+
+async function Body({ searchParams }: { searchParams: Promise<AddParams> }) {
+  const { type, name, provider, address, checkin, checkout } = await searchParams;
   const { db } = await requireUser();
   const { data } = await db.from("places").select("*").order("kind").order("label");
   const places = (data ?? []) as SavedPlace[];
@@ -26,7 +28,11 @@ async function Body({ searchParams }: { searchParams: Promise<{ type?: string }>
           to pick them here.
         </p>
       ) : null}
-      <AddForm places={places} initialKind={type && KINDS.has(type) ? (type as "drive") : "drive"} />
+      <AddForm
+        places={places}
+        initialKind={type && KINDS.has(type) ? (type as "drive") : "drive"}
+        prefill={{ property_name: name, provider, address, start_local: checkin, end_local: checkout }}
+      />
     </>
   );
 }
@@ -36,7 +42,7 @@ export default function AddPage({ searchParams }: PageProps<"/add">) {
     <>
       <h1 className="mb-4 text-3xl font-bold">Add</h1>
       <Suspense fallback={<Loading />}>
-        <Body searchParams={searchParams as Promise<{ type?: string }>} />
+        <Body searchParams={searchParams as Promise<AddParams>} />
       </Suspense>
     </>
   );

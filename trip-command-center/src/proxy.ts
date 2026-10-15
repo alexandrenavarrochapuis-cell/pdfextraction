@@ -4,7 +4,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PREFIXES = ["/login", "/auth", "/api/ingest", "/api/cron"];
+// The calendar feed authenticates with the secret token in its URL.
+const PUBLIC_PREFIXES = ["/login", "/auth", "/api/ingest", "/api/cron", "/api/calendar"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

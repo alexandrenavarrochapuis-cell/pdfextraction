@@ -48,6 +48,18 @@ export function driveMinutesTo(airportCode: string): number | null {
 
 export const EXTRACTION_MODEL = "claude-sonnet-5-5";
 
+/** Research-heavy assistant work (country briefs, trip planning). */
+export const ASSISTANT_MODEL = "claude-opus-5-5";
+
+/** Citizenships the country brief covers (embassies, visas), e.g. "US,FR". */
+export function citizenships(): string[] {
+  const list = (process.env.CITIZENSHIPS ?? "US")
+    .split(",")
+    .map((c) => c.trim().toUpperCase())
+    .filter((c) => /^[A-Z]{2}$/.test(c));
+  return list.length ? list : ["US"];
+}
+
 /** Below this confidence an extracted segment is flagged needs_review. */
 export const REVIEW_CONFIDENCE_THRESHOLD = 0.7;
 

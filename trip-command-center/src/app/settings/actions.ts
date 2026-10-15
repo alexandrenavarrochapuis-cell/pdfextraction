@@ -72,3 +72,17 @@ export async function deleteTraveler(form: FormData) {
   if (id) await db.from("travelers").delete().eq("id", id);
   revalidatePath("/settings");
 }
+
+export async function rotateCalendarToken() {
+  const { db, user } = await requireUser();
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const token = Buffer.from(bytes).toString("base64url");
+  await db.from("profiles").update({ calendar_token: token }).eq("id", user.id);
+  revalidatePath("/settings");
+}
+
+export async function disableCalendarFeed() {
+  const { db, user } = await requireUser();
+  await db.from("profiles").update({ calendar_token: null }).eq("id", user.id);
+  revalidatePath("/settings");
+}

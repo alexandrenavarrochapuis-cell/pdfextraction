@@ -11,6 +11,7 @@ interface OpenMeteoGeoResponse {
     longitude: number;
     timezone?: string;
     country_code?: string;
+    admin1?: string;
   }[];
 }
 
@@ -31,6 +32,7 @@ export const openMeteoGeocoder: Geocoder = async (city, country) => {
     const result: GeoResult = {
       name: hit.name,
       country: hit.country_code ?? null,
+      region: hit.admin1 ?? null,
       lat: hit.latitude,
       lng: hit.longitude,
       tz: hit.timezone,
@@ -59,6 +61,7 @@ export interface AddressResult {
   lat: number;
   lng: number;
   city: string | null;
+  region: string | null;
   country: string | null;
   tz: string | null;
   display: string;
@@ -119,6 +122,7 @@ export async function geocodeAddress(address: string): Promise<AddressResult | n
       lat,
       lng,
       city: a.city ?? a.town ?? a.village ?? a.municipality ?? a.hamlet ?? a.county ?? null,
+      region: a.state ?? null,
       country: a.country_code ? a.country_code.toUpperCase() : null,
       tz: await timezoneAt(lat, lng),
       display: hit.display_name,
