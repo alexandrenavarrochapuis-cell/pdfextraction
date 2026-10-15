@@ -1,0 +1,23 @@
+Return-Path: <alex+caf_=trips=example.com@sidus.group>
+X-Forwarded-For: alex@sidus.group trips@example.com
+From: Marriott Bonvoy <marriott@email-marriott.com>
+To: alex@sidus.group
+Subject: Reservation Confirmation #81234567 for Paris Marriott Champs Elysees Hotel
+Date: Tue, 16 Mar 2027 09:00:00 -0400
+Message-ID: <synthetic-marriott-1@example.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+
+<html><head>
+<script type="application/ld+json">
+{"@context":"http://schema.org","@type":"LodgingReservation","reservationNumber":"81234567",
+ "reservationStatus":"http://schema.org/ReservationConfirmed",
+ "underName":{"@type":"Person","name":"Alex Example"},
+ "reservationFor":{"@type":"LodgingBusiness","name":"Paris Marriott Champs Elysees Hotel",
+  "address":{"@type":"PostalAddress","streetAddress":"70 Avenue des Champs-Elysees","addressLocality":"Paris",
+   "postalCode":"75008","addressCountry":"FR"},
+  "telephone":"+33 1 53 93 55 00"},
+ "checkinDate":"2027-06-25","checkoutDate":"2027-07-14",
+ "lodgingUnitDescription":"Deluxe King Room"}
+</script>
+</head><body><p>SYNTHETIC TEST FIXTURE. Check-in Friday, June 25, 2027.</p></body></html>

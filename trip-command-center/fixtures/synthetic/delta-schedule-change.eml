@@ -1,0 +1,19 @@
+X-MS-Exchange-Inbox-Rules-Loop: alexandre.navarro@theperformagroup.com
+From: Delta Air Lines <DeltaAirLines@t.delta.com>
+To: alexandre.navarro@theperformagroup.com
+Subject: Schedule change for your trip G7XK2P
+Date: Thu, 01 Apr 2027 07:30:00 -0400
+Message-ID: <synthetic-delta-2@example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+SYNTHETIC TEST FIXTURE. Not a real booking.
+
+We've had to make a change to your flight schedule.
+Confirmation #: G7XK2P
+
+NEW ITINERARY
+Thu 24JUN  DL 84  Atlanta (ATL) 6:30pm  ->  Paris (CDG) 8:50am Fri 25JUN   Terminal F
+(was 5:45pm)
+
+Your other flights are unchanged.

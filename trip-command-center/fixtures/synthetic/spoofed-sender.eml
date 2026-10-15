@@ -1,0 +1,9 @@
+From: Delta Air Lines <DeltaAirLines@t.delta.com>
+To: trips@example.com
+Subject: Your Flight Receipt
+Date: Fri, 02 Apr 2027 12:00:00 -0400
+Message-ID: <synthetic-spoof-1@example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+SYNTHETIC TEST FIXTURE. Sent straight to the inbound address, not through a forwarding rule.

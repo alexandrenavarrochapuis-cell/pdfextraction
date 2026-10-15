@@ -1,0 +1,21 @@
+From: Alex Example <alex@sidus.group>
+To: trips@example.com
+Subject: Fwd: Hertz Reservation H7790122 Cancelled
+Date: Mon, 22 Mar 2027 08:00:00 -0400
+Message-ID: <synthetic-hertz-2@example.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+
+<html><head>
+<script type="application/ld+json">
+{"@context":"http://schema.org","@type":"RentalCarReservation","reservationNumber":"H7790122",
+ "reservationStatus":"http://schema.org/ReservationCancelled",
+ "reservationFor":{"@type":"RentalCar","name":"Compact","rentalCompany":{"@type":"Organization","name":"Hertz"}},
+ "pickupLocation":{"@type":"Place","name":"Hertz Paris Charles de Gaulle Airport",
+  "address":{"@type":"PostalAddress","addressLocality":"Paris","addressCountry":"FR"}},
+ "pickupTime":"2027-07-02T09:30:00+02:00",
+ "dropoffLocation":{"@type":"Place","name":"Hertz Paris Gare de Lyon",
+  "address":{"@type":"PostalAddress","addressLocality":"Paris","addressCountry":"FR"}},
+ "dropoffTime":"2027-07-05T18:00:00+02:00"}
+</script>
+</head><body><p>SYNTHETIC TEST FIXTURE. Your reservation has been cancelled.</p></body></html>

@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+/*
+ * Design rules (spec section 6): light background, dark text, no
+ * white-on-black screens; accent #BE2332 used sparingly; never rely on color
+ * alone (every status and type also has an icon, a text label, or a border
+ * style); large tap targets for one-handed use in an airport.
+ */
+@theme {
+  --color-accent: #be2332;
+  --color-accent-soft: #fbeaec;
+  --color-ink: #1b1b1f;
+  --color-muted: #505259;
+  --color-canvas: #f5f4f1;
+  --color-paper: #ffffff;
+  --color-line: #cfccc6;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+a {
+  text-underline-offset: 3px;
+}
+
+/* Visible focus for keyboard and switch control users. */
+:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
+/* Native disclosure triangles hidden; cards draw their own chevron. */
+summary {
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+details[open] .chevron {
+  transform: rotate(180deg);
+}
+
+/* Leaflet labels on the flight map. */
+.map-label.leaflet-tooltip {
+  background: #fff;
+  color: var(--color-ink);
+  border: 1.5px solid var(--color-ink);
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 2px 6px;
+  box-shadow: none;
+}
+.map-label.leaflet-tooltip::before {
+  display: none;
+}
+.plane-icon {
+  background: none;
+  border: none;
+}
