@@ -28,6 +28,15 @@ export function ownerEmail(): string {
   return email;
 }
 
+/**
+ * Sender for the sign-in email Atlas sends itself through Resend, e.g.
+ * "Atlas <atlas@your-domain.com>" on a Resend sending domain. Unset, Supabase
+ * sends its own email instead.
+ */
+export function authEmailFrom(): string | null {
+  return process.env.AUTH_EMAIL_FROM?.trim() || null;
+}
+
 export function inboundAddress(): string | null {
   return process.env.INBOUND_ADDRESS?.trim() || null;
 }

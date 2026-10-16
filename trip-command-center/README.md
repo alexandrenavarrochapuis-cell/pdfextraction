@@ -95,11 +95,15 @@ Hosted on Vercel.
 1. **Supabase.** Create a project. Apply the migrations in order with
    `supabase db push`, or paste `supabase/migrations/*.sql` into the SQL
    editor.
-   - Auth > Email templates > Magic Link: add `{{ .Token }}` to the template.
-     On iPhone, the home-screen app keeps its own cookies, so you sign in by
-     typing the 6-digit code; a link would sign in Safari instead.
-   - Auth > URL configuration: set the site URL to your Vercel domain and add
-     `https://<domain>/auth/confirm` to the redirect URLs.
+   - Sign-in email: set `AUTH_EMAIL_FROM` (step 3) and Atlas sends the code
+     itself through Resend, so the two settings below can stay as they are.
+     Without it, Supabase's built-in mailer sends the code (2 emails an hour)
+     and needs them:
+     - Auth > Email templates > Magic Link: add `{{ .Token }}` to the
+       template. On iPhone, the home-screen app keeps its own cookies, so you
+       sign in by typing the 6-digit code; a link would sign in Safari instead.
+     - Auth > URL configuration: set the site URL to your Vercel domain and
+       add `https://<domain>/auth/confirm` to the redirect URLs.
    - After your first sign-in, turn off new sign-ups (Auth > Providers >
      Email). The app also refuses any email other than `OWNER_EMAIL`.
    - Scheduling runs in the database (`0007_scheduler.sql`: pg_cron calls
@@ -114,7 +118,9 @@ Hosted on Vercel.
    that address is rejected, so keep it out of anything but your forwarding
    rules. Create a webhook for `email.received` pointing to
    `https://<domain>/api/ingest/email` and put its signing secret in
-   `RESEND_WEBHOOK_SECRET`.
+   `RESEND_WEBHOOK_SECRET`. For sign-in codes, verify a sending domain too and
+   set `AUTH_EMAIL_FROM` to an address on it; `RESEND_API_KEY` then needs
+   full access (receiving and sending).
 3. **Environment.** Copy `.env.example` and fill it in. Generate VAPID keys
    with `npx web-push generate-vapid-keys`.
 4. **Vercel.** Import the repo with root directory `trip-command-center`.
@@ -137,7 +143,7 @@ Hosted on Vercel.
 npm install
 cp .env.example .env.local   # then fill it in
 npm run dev                  # http://localhost:3000
-npm test                     # Vitest, 87 tests, no network
+npm test                     # Vitest, 100 tests, no network
 npm run lint && npm run typecheck && npm run build
 ```
 

@@ -26,6 +26,14 @@ async function tryAcquire(db: SupabaseClient, key: string, holder: string, ttlMs
 }
 
 /**
+ * Claim `key` for `ttlMs` and let the claim expire on its own: a cooldown.
+ * False while an earlier claim is still live.
+ */
+export function claimCooldown(db: SupabaseClient, key: string, ttlMs: number): Promise<boolean> {
+  return tryAcquire(db, key, crypto.randomUUID(), ttlMs);
+}
+
+/**
  * Run `fn` while holding the lease on `key`, waiting up to `waitMs` for it.
  * Needs the service-role client: job_leases has no policies for users.
  */
