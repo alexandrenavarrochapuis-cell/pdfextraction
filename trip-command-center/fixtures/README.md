@@ -23,18 +23,32 @@ sometimes partial card numbers. Drop `.eml` files there, optionally with a
 ANTHROPIC_API_KEY=... npm run test:live
 ```
 
-`tests/live-extraction.test.ts` sends every real fixture through the full
-extraction path (markup first, then Claude) and checks the fields listed in
-the expected file. Without an expected file it prints what was extracted, so
-you can review it and save it as the expectation.
+To save an email from Gmail, open it, choose Show original, then Download
+Original. In Outlook, use Save as.
 
-Expected file shape (only the fields you list are checked):
+`tests/live-extraction.test.ts` sends every real fixture through the full
+extraction path (markup first, then Claude, with PDF and `.ics` attachments)
+and writes what it extracted to `<name>.extracted.json`, in the same shape as
+an expected file. Review it, correct anything wrong, and save it as
+`<name>.expected.json` to turn it into a regression check.
+
+Expected file shape:
 
 ```json
 {
+  "is_travel": true,
   "segments": [
     { "type": "flight", "confirmation_code": "ABC123", "flight_number": "AF 91",
       "origin": "CDG", "destination": "IAD", "start_at": "2026-06-24T10:25:00.000Z" }
   ]
 }
 ```
+
+- Only the fields you list are checked. Each listed segment must match a
+  different extracted segment, and the number of segments must be the same.
+- Matching ignores case and spaces, so `DL84` matches `DL 84`.
+- `origin` and `destination` compare against the place's airport or station
+  code, or its city when it has no code, or its name when it has neither.
+- `start_at` and `end_at` compare as instants, so any ISO 8601 form works.
+- Any other field (`flight_number`, `seat`, `property_name`, ...) is
+  looked up in the segment's details.

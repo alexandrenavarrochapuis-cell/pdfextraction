@@ -16,6 +16,12 @@ export interface LoadedEml {
   headers: Record<string, string>;
 }
 
+const MAX_PDFS_FOR_EXTRACTION = 5;
+
+function attachmentBytes(content: ArrayBuffer | Uint8Array | string): Buffer {
+  return typeof content === "string" ? Buffer.from(content, "utf8") : Buffer.from(new Uint8Array(content));
+}
+
 export async function loadEml(path: string): Promise<LoadedEml> {
   const parsed = await PostalMime.parse(readFileSync(path));
   const headers: Record<string, string> = {};
@@ -23,6 +29,19 @@ export async function loadEml(path: string): Promise<LoadedEml> {
   const from = parsed.from && "address" in parsed.from && parsed.from.address
     ? `${parsed.from.name} <${parsed.from.address}>`
     : null;
+
+  // Same attachments the inbound pipeline hands to extraction: PDFs and calendar invites.
+  const pdfs: InboundEmail["pdfs"] = [];
+  const textAttachments: InboundEmail["textAttachments"] = [];
+  for (const a of parsed.attachments) {
+    const name = (a.filename ?? "").toLowerCase();
+    if ((a.mimeType === "application/pdf" || name.endsWith(".pdf")) && pdfs.length < MAX_PDFS_FOR_EXTRACTION) {
+      pdfs.push({ filename: a.filename, base64: attachmentBytes(a.content).toString("base64") });
+    } else if (a.mimeType.startsWith("text/calendar") || name.endsWith(".ics")) {
+      textAttachments.push({ filename: a.filename, text: attachmentBytes(a.content).toString("utf8") });
+    }
+  }
+
   return {
     from,
     headers,
@@ -32,8 +51,8 @@ export async function loadEml(path: string): Promise<LoadedEml> {
       sentAt: parsed.date ?? null,
       text: parsed.text ?? null,
       html: parsed.html ?? null,
-      pdfs: [],
-      textAttachments: [],
+      pdfs,
+      textAttachments,
     },
   };
 }
