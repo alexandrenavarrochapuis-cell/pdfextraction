@@ -102,15 +102,23 @@ Hosted on Vercel.
      `https://<domain>/auth/confirm` to the redirect URLs.
    - After your first sign-in, turn off new sign-ups (Auth > Providers >
      Email). The app also refuses any email other than `OWNER_EMAIL`.
-2. **Resend.** Add a receiving domain (or use the Resend-provided one) and
-   create a webhook for `email.received` pointing to
-   `https://<domain>/api/ingest/email`. Put its signing secret in
+   - Scheduling runs in the database (`0007_scheduler.sql`: pg_cron calls
+     the app hourly for briefs and daily for the purge), so it works on any
+     Vercel plan. After the first deploy, store the app URL and the cron
+     secret in Vault once (SQL editor):
+     `select vault.create_secret('https://<domain>', 'atlas_app_url');` and
+     `select vault.create_secret('<CRON_SECRET>', 'atlas_cron_secret');`.
+2. **Resend.** Add a receiving subdomain (for example `inbound.<your-domain>`,
+   so your main mail is untouched) and its MX record. Pick a random inbound
+   address on it for `INBOUND_ADDRESS`: mail Resend did not deliver to exactly
+   that address is rejected, so keep it out of anything but your forwarding
+   rules. Create a webhook for `email.received` pointing to
+   `https://<domain>/api/ingest/email` and put its signing secret in
    `RESEND_WEBHOOK_SECRET`.
 3. **Environment.** Copy `.env.example` and fill it in. Generate VAPID keys
    with `npx web-push generate-vapid-keys`.
 4. **Vercel.** Import the repo with root directory `trip-command-center`.
-   `vercel.json` schedules the brief hourly and the 90-day email purge daily.
-   Hourly cron needs a Pro plan: Hobby runs cron jobs at most once a day.
+   Any plan works; the schedule lives in Supabase (step 1).
 5. **Sign in** on the phone, add the app to the Home Screen (Share > Add to
    Home Screen), open it from there, and turn on notifications in Settings.
    In Settings, also add your travelers and places, and create the calendar

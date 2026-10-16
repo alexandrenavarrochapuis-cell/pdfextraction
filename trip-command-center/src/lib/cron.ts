@@ -1,4 +1,4 @@
-// Vercel Cron sends "Authorization: Bearer $CRON_SECRET" when CRON_SECRET is set.
+// The scheduler (pg_cron, supabase/migrations/0007) sends "Authorization: Bearer $CRON_SECRET".
 
 import { timingSafeEqual } from "node:crypto";
 
