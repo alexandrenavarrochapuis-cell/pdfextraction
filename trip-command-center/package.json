@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:live": "RUN_LIVE_EXTRACTION=1 vitest run tests/live-extraction.test.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {

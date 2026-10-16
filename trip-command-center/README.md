@@ -127,13 +127,17 @@ npm install
 cp .env.example .env.local   # then fill it in
 npm run dev                  # http://localhost:3000
 npm test                     # Vitest, 87 tests, no network
-npx eslint . && npx tsc --noEmit && npm run build
+npm run lint && npm run typecheck && npm run build
 ```
 
+GitHub Actions runs the same checks (lint, typecheck, tests, build) on every
+pull request that touches this folder; see
+`.github/workflows/trip-command-center.yml` at the repo root.
+
 `fixtures/synthetic/` holds hand-written `.eml` files that go through the real
-pipeline in the tests. For real confirmations, see `fixtures/README.md`. They
-go in the gitignored `fixtures/real/` and run against Claude with
-`npm run test:live`.
+pipeline in the tests. Real confirmations go in the gitignored
+`fixtures/real/` and run against Claude with `npm run test:live`; see
+`fixtures/README.md`.
 
 ## What was and was not verified
 
