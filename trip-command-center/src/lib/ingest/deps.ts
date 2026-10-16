@@ -15,7 +15,8 @@ export function createResend(): Resend {
 
 export function createExtractDeps(): ExtractDeps {
   return {
-    claude: createClaudeExtractor(new Anthropic()),
+    // Inside the routes' 300-second limit, leaving time to record a failure.
+    claude: createClaudeExtractor(new Anthropic({ timeout: 200_000, maxRetries: 1 })),
     geocode: cachedGeocoder(openMeteoGeocoder),
   };
 }

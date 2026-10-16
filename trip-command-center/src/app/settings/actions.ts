@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { geocodeAddress } from "@/lib/geo";
 
 export async function saveBriefSettings(form: FormData) {
@@ -69,7 +70,13 @@ export async function addTraveler(form: FormData) {
 export async function deleteTraveler(form: FormData) {
   const { db } = await requireUser();
   const id = String(form.get("id") ?? "");
-  if (id) await db.from("travelers").delete().eq("id", id);
+  if (!id) return;
+  // The traveler's documents cascade away with them; their encrypted scans
+  // live in Storage and have to be removed first. RLS scopes the read.
+  const { data: docs } = await db.from("travel_documents").select("scan_path").eq("traveler_id", id);
+  const scans = (docs ?? []).map((d) => d.scan_path as string | null).filter((p): p is string => !!p);
+  if (scans.length) await createAdminClient().storage.from("vault").remove(scans);
+  await db.from("travelers").delete().eq("id", id);
   revalidatePath("/settings");
 }
 

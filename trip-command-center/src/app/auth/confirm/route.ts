@@ -3,11 +3,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createSessionClient } from "@/lib/supabase/server";
+import { safeNextPath } from "@/lib/redirect";
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl;
-  const next = url.searchParams.get("next") ?? "/";
-  const target = new URL(next.startsWith("/") && !next.startsWith("//") ? next : "/", url.origin);
+  const target = new URL(safeNextPath(url.searchParams.get("next")), url.origin);
   const db = await createSessionClient();
 
   const code = url.searchParams.get("code");

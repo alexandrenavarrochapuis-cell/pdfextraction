@@ -68,10 +68,20 @@ describe("calendar feed", () => {
     expect(ics).toContain("DTSTART:20270624T214500Z");
     expect(ics).toContain("DTEND:20270625T060500Z");
     expect(ics).toContain("SUMMARY:DL 84 · ATL → CDG");
-    expect(ics).toContain("SUMMARY:Cancelled: Hotel\; Paris\\, Center");
+    expect(ics).toContain("SUMMARY:Cancelled: Hotel\\; Paris\\, Center");
     expect(ics).toContain("STATUS:CANCELLED");
     expect(ics).not.toContain("SECRET1");
     for (const line of ics.split("\r\n")) expect(new TextEncoder().encode(line).length).toBeLessThanOrEqual(75);
+  });
+
+  it("escapes line breaks so email text cannot add properties", () => {
+    const ics = buildIcs(
+      [segment({ id: "seg-c", type: "hotel", start_at: "2027-06-25T13:00:00Z", details: { property_name: "Le Hotel\rATTACH:http://evil.example" } })],
+      "https://trips.example.com",
+      new Date("2027-01-01T00:00:00Z"),
+    );
+    expect(ics).toContain("SUMMARY:Le Hotel\\nATTACH:http://evil.example");
+    expect(ics).not.toMatch(/\rATTACH/);
   });
 });
 

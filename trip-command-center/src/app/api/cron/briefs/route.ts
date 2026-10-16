@@ -1,5 +1,5 @@
-// GET /api/cron/briefs: hourly (vercel.json). Sends each due day-before brief
-// once (spec section 7) and refreshes trip statuses.
+// GET /api/cron/briefs: hourly. Sends each due day-before brief once (spec
+// section 7), refreshes trip statuses and moves stalled emails to review.
 
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -7,8 +7,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isAuthorizedCron } from "@/lib/cron";
 import { driveMinutesTo, homeAirports, userTimezone } from "@/lib/config";
 import { buildBrief } from "@/lib/brief/build";
-import { dueBriefs, type DueBrief, type TripWithSegments } from "@/lib/brief/schedule";
+import { alreadyBriefed, dueBriefs, type DueBrief, type SentBrief, type TripWithSegments } from "@/lib/brief/schedule";
 import { fetchDayWeather } from "@/lib/brief/weather";
+import { failStalledEmails } from "@/lib/ingest/pipeline";
 import { sendPushToUser } from "@/lib/push";
 import { refreshTripStatuses } from "@/lib/trips/regroup";
 import type { Profile, Segment, Trip } from "@/lib/types";
@@ -61,14 +62,29 @@ async function runForUser(db: SupabaseClient, profile: Profile, now: Date) {
     segments: ((segs ?? []) as Segment[]).filter((s) => s.trip_id === trip.id),
   }));
   const results: { trip_id: string; for_date: string; delivered: number | null }[] = [];
+  const dueList = dueBriefs(withSegments, now, { homeTz: userTimezone(), briefHour: profile.brief_hour });
+  if (!dueList.length) return results;
+
   const { data: trusted } = await db
     .from("travel_documents")
     .select("id")
     .eq("user_id", profile.id)
     .eq("kind", "trusted_traveler")
     .limit(1);
+  const { data: sentRows, error: sentErr } = await db
+    .from("briefs")
+    .select("trip_id, for_date, payload")
+    .eq("user_id", profile.id)
+    .in("for_date", [...new Set(dueList.map((d) => d.forDate))])
+    .not("sent_at", "is", null);
+  if (sentErr) throw sentErr;
+  const sent: SentBrief[] = (sentRows ?? []).map((r) => ({
+    trip_id: r.trip_id as string | null,
+    for_date: r.for_date as string,
+    segment_ids: ((r.payload as { segment_ids?: string[] } | null)?.segment_ids ?? []),
+  }));
 
-  for (const due of dueBriefs(withSegments, now, { homeTz: userTimezone(), briefHour: profile.brief_hour })) {
+  for (const due of dueList) {
     const payload = await buildBrief({
       trip: due.trip,
       segments: due.segments,
@@ -81,6 +97,7 @@ async function runForUser(db: SupabaseClient, profile: Profile, now: Date) {
       weather: fetchDayWeather,
       trustedTraveler: !!trusted?.length,
     });
+    if (alreadyBriefed(due.trip.id, due.forDate, payload.segment_ids, sent)) continue;
     const briefId = await claim(db, profile.id, due, payload);
     if (!briefId) continue;
 
@@ -104,6 +121,12 @@ export async function GET(request: Request) {
   if (!isAuthorizedCron(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const db = createAdminClient();
   const now = new Date();
+  let stalled = 0;
+  try {
+    stalled = await failStalledEmails(db, now);
+  } catch (err) {
+    console.error("[cron/briefs] stalled email sweep:", err);
+  }
   const { data: profiles, error } = await db.from("profiles").select("*");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const sent = [];
@@ -114,5 +137,5 @@ export async function GET(request: Request) {
       console.error(`[cron/briefs] ${profile.id}:`, err);
     }
   }
-  return NextResponse.json({ ok: true, sent });
+  return NextResponse.json({ ok: true, sent, stalled });
 }

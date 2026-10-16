@@ -68,3 +68,26 @@ export function dueBriefs(
   }
   return due;
 }
+
+export interface SentBrief {
+  trip_id: string | null;
+  for_date: string;
+  segment_ids: string[];
+}
+
+/**
+ * The brief for (trip, date) is claimed once per trip id. Merging, splitting or
+ * regrouping can move tomorrow's segments to another trip id after its brief
+ * went out; this catches that case so the same plan is not pushed twice.
+ */
+export function alreadyBriefed(
+  tripId: string,
+  forDate: string,
+  segmentIds: string[],
+  sent: SentBrief[],
+): boolean {
+  const ids = new Set(segmentIds);
+  return sent.some(
+    (b) => b.for_date === forDate && b.trip_id !== tripId && b.segment_ids.some((id) => ids.has(id)),
+  );
+}

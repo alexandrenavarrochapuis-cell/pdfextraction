@@ -8,7 +8,9 @@ import { createExtractDeps, createResend } from "@/lib/ingest/deps";
 import { processRawEmail, receiveEmail } from "@/lib/ingest/pipeline";
 import { SignatureError, verifyResendWebhook } from "@/lib/ingest/verify";
 
-export const maxDuration = 60;
+// Extraction runs in after(), which shares this limit. The Claude client times
+// out well inside it (deps.ts) so a slow call still reaches the failure path.
+export const maxDuration = 300;
 
 interface ReceivedEvent {
   type: string;

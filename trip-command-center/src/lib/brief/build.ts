@@ -66,6 +66,8 @@ export interface BriefPayload {
   security_tips: string[];
   needs_review: { segment_id: string; title: string; reasons: string[] }[];
   push: { title: string; body: string };
+  /** Segments this brief covers, so a later trip merge or split cannot send them again. */
+  segment_ids: string[];
 }
 
 export interface BuildBriefInput {
@@ -281,5 +283,6 @@ export async function buildBrief(input: BuildBriefInput): Promise<BriefPayload> 
     security_tips: securityTips(day, input.trustedTraveler ?? false),
     needs_review: needsReview,
     push: { title: pushTitle, body: bodyParts.join(" · ") || "Open the brief for tomorrow's plan." },
+    segment_ids: [...new Set([...day.map((s) => s.id), ...stops.map((s) => s.segment_id)])],
   };
 }

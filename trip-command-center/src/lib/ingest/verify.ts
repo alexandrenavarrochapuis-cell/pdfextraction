@@ -1,5 +1,6 @@
 // Inbound security (spec sections 3 and 10): the webhook must be signed by
-// Resend, and the email must have come through one of Alex's forwarding rules.
+// Resend, the email must have been delivered to the secret inbound address,
+// and it must have come through one of Alex's forwarding rules.
 
 import { Resend } from "resend";
 
@@ -32,8 +33,31 @@ export function normalizeAddress(address: string): string {
   return `${local.split("+")[0]}@${domain}`;
 }
 
+/**
+ * The mailbox addresses in a header value. When angle brackets are present only
+ * the bracketed addresses count, so a display name such as
+ * `"alex@sidus.group" <x@evil.example>` yields x@evil.example. Quoted strings
+ * and (comments) are dropped before bare addresses are read.
+ */
 function addressesIn(value: string | null | undefined): string[] {
-  return (value ?? "").match(ADDRESS_RE)?.map(normalizeAddress) ?? [];
+  const text = value ?? "";
+  const bracketed = [...text.matchAll(/<([^<>]*)>/g)].map((m) => m[1]);
+  const source = bracketed.length ? bracketed.join(" ") : text.replace(/"(?:[^"\\]|\\.)*"/g, " ").replace(/\([^()]*\)/g, " ");
+  return source.match(ADDRESS_RE)?.map(normalizeAddress) ?? [];
+}
+
+/**
+ * The inbound address is the real gate: it is random and appears only in Alex's
+ * forwarding rules, and Resend reports the SMTP envelope recipients in
+ * `received_for`, which a sender cannot fake for mail that never reached it.
+ * Compared whole and case-insensitively: a "+tag" here is part of the secret.
+ */
+export function deliveredToInbound(receivedFor: string[] | null | undefined, inbound: string): boolean {
+  const want = inbound.trim().toLowerCase();
+  return (receivedFor ?? []).some((entry) => {
+    const bracketed = entry.match(/<([^<>]+)>/);
+    return (bracketed ? bracketed[1] : entry).trim().toLowerCase() === want;
+  });
 }
 
 /**
@@ -61,9 +85,10 @@ export function forwarderCandidates(from: string | null, headers: Record<string,
 }
 
 /**
- * Header checks are a sender allowlist, not authentication: headers can be
- * forged. The signature check proves the request came from Resend; this keeps
- * random mail sent to the inbound address out of the timeline.
+ * Header checks are a sender allowlist, not authentication: Sender,
+ * X-Forwarded-For and the rest can be forged. The signature check proves the
+ * request came from Resend and deliveredToInbound() proves the mail reached the
+ * secret address; this is a second layer if that address ever leaks.
  */
 export function isAllowedForwarder(
   from: string | null,

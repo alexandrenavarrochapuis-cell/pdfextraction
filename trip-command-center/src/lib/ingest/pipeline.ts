@@ -5,13 +5,14 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Resend } from "resend";
 import type { RawEmail, Segment, StoredAttachment } from "../types";
-import { allowedForwarders, ownerEmail } from "../config";
+import { allowedForwarders, inboundAddress, ownerEmail } from "../config";
 import { planSegmentWrites } from "../trips/apply";
 import { regroupUser } from "../trips/regroup";
 import type { EmailForExtraction } from "./claude";
 import { extractSegments, type ExtractDeps } from "./extract";
-import { isAllowedForwarder } from "./verify";
+import { deliveredToInbound, isAllowedForwarder } from "./verify";
 import { passKind, saveBoardingPass } from "../passes/store";
+import { withLease } from "../lease";
 
 const ATTACHMENT_BUCKET = "email-attachments";
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
@@ -33,9 +34,16 @@ export async function resolveOwnerId(db: SupabaseClient): Promise<string> {
 
 /** Fetch the full message from Resend, apply the forwarder allowlist and store it. */
 export async function receiveEmail(db: SupabaseClient, resend: Resend, emailId: string): Promise<ReceiveResult> {
+  // Fail loudly (500, so Resend retries) rather than accept mail on any address.
+  const inbound = inboundAddress();
+  if (!inbound) throw new Error("INBOUND_ADDRESS is not set");
+
   const { data: email, error } = await resend.emails.receiving.get(emailId);
   if (error || !email) throw new Error(`Resend could not return email ${emailId}: ${error?.message ?? "no data"}`);
 
+  if (!deliveredToInbound(email.received_for, inbound)) {
+    return { status: "rejected", reason: "not delivered to the inbound address" };
+  }
   if (!isAllowedForwarder(email.from, email.headers, allowedForwarders())) {
     return { status: "rejected", reason: `sender ${email.from} is not an allowed forwarder` };
   }
@@ -194,6 +202,46 @@ async function applyWrites(db: SupabaseClient, raw: RawEmail, writes: ReturnType
   }
 }
 
+/**
+ * Mark an email failed and surface it in the review queue, where it can be
+ * entered by hand or retried. Adds at most one placeholder per email.
+ */
+async function markFailed(
+  db: SupabaseClient,
+  raw: Pick<RawEmail, "id" | "user_id" | "from_addr" | "subject">,
+  message: string,
+): Promise<void> {
+  await db.from("raw_emails").update({ processing_status: "failed", processing_error: message }).eq("id", raw.id);
+  const { data: placeholder } = await db
+    .from("segments")
+    .select("id")
+    .eq("source_email_id", raw.id)
+    .contains("review_reasons", [FAILED_EXTRACTION])
+    .maybeSingle();
+  if (!placeholder) {
+    await db.from("segments").insert({
+      user_id: raw.user_id,
+      type: "other",
+      status: "needs_review",
+      provider: raw.from_addr,
+      details: { note: raw.subject ?? "Forwarded email" },
+      source_email_id: raw.id,
+      confidence: 0,
+      review_reasons: [FAILED_EXTRACTION],
+    });
+  }
+}
+
+/** Drop the failure placeholder once an email has gone through. */
+async function clearFailure(db: SupabaseClient, raw: RawEmail): Promise<void> {
+  await db
+    .from("segments")
+    .delete()
+    .eq("user_id", raw.user_id)
+    .eq("source_email_id", raw.id)
+    .contains("review_reasons", [FAILED_EXTRACTION]);
+}
+
 /** Extract and store segments for a stored email. Never throws: failures land in the review queue. */
 export async function processRawEmail(
   db: SupabaseClient,
@@ -228,13 +276,19 @@ export async function processRawEmail(
         .from("raw_emails")
         .update({ processing_status: "ignored", extraction_method: result.method, processing_error: null })
         .eq("id", raw.id);
+      await clearFailure(db, raw);
       return;
     }
 
-    const { data: existing, error: segErr } = await db.from("segments").select("*").eq("user_id", raw.user_id);
-    if (segErr) throw segErr;
-    await applyWrites(db, raw, planSegmentWrites(result.segments, (existing ?? []) as Segment[], raw.id));
-    await regroupUser(db, raw.user_id);
+    // Dedupe and trip grouping read then write the user's segments and trips,
+    // so two emails processed at once take turns here.
+    await withLease(db, `segments:${raw.user_id}`, async () => {
+      const { data: existing, error: segErr } = await db.from("segments").select("*").eq("user_id", raw.user_id);
+      if (segErr) throw segErr;
+      await applyWrites(db, raw, planSegmentWrites(result.segments, (existing ?? []) as Segment[], raw.id));
+      await clearFailure(db, raw);
+      await regroupUser(db, raw.user_id);
+    });
     await saveEmailPasses(db, raw, files, result.boardingPasses);
     await db
       .from("raw_emails")
@@ -243,42 +297,42 @@ export async function processRawEmail(
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[ingest] email ${raw.id} failed:`, message);
-    await db.from("raw_emails").update({ processing_status: "failed", processing_error: message }).eq("id", raw.id);
-    // Surface the email in the review queue so it can be entered by hand or retried.
-    const { data: placeholder } = await db
-      .from("segments")
-      .select("id")
-      .eq("source_email_id", raw.id)
-      .contains("review_reasons", [FAILED_EXTRACTION])
-      .maybeSingle();
-    if (!placeholder) {
-      await db.from("segments").insert({
-        user_id: raw.user_id,
-        type: "other",
-        status: "needs_review",
-        provider: raw.from_addr,
-        details: { note: raw.subject ?? "Forwarded email" },
-        source_email_id: raw.id,
-        confidence: 0,
-        review_reasons: [FAILED_EXTRACTION],
-      });
-    }
+    await markFailed(db, raw, message);
   }
 }
 
-/** Re-run extraction for an email, dropping the failure placeholder first. */
+/**
+ * Re-run extraction for an email from the review queue. The failure
+ * placeholder stays until a run succeeds, so a run that dies midway leaves the
+ * email in the queue.
+ */
 export async function retryRawEmail(
   db: SupabaseClient,
   resend: Resend,
-  userId: string,
   rawId: string,
   deps: ExtractDeps,
 ): Promise<void> {
-  await db
-    .from("segments")
-    .delete()
-    .eq("user_id", userId)
-    .eq("source_email_id", rawId)
-    .contains("review_reasons", [FAILED_EXTRACTION]);
   await processRawEmail(db, resend, rawId, deps);
+}
+
+/** How long an email may sit unprocessed before it counts as lost. */
+const STALLED_AFTER_MS = 15 * 60_000;
+
+/**
+ * Emails whose extraction run was cut off (a function timeout ends the run
+ * before its catch block) stay "received" forever. Move them to the review
+ * queue. Run from the hourly cron.
+ */
+export async function failStalledEmails(db: SupabaseClient, now = new Date()): Promise<number> {
+  const cutoff = new Date(now.getTime() - STALLED_AFTER_MS).toISOString();
+  const { data, error } = await db
+    .from("raw_emails")
+    .select("id, user_id, from_addr, subject")
+    .eq("processing_status", "received")
+    .lt("received_at", cutoff);
+  if (error) throw error;
+  for (const raw of data ?? []) {
+    await markFailed(db, raw as RawEmail, "Extraction did not finish in time. Retry it from the review queue.");
+  }
+  return data?.length ?? 0;
 }

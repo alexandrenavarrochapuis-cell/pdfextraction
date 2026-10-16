@@ -8,7 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createExtractDeps, createResend } from "@/lib/ingest/deps";
 import { retryRawEmail } from "@/lib/ingest/pipeline";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const Body = z.object({ email_id: z.uuid() });
 
@@ -26,6 +26,6 @@ export async function POST(request: Request) {
     .maybeSingle();
   if (!email) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  await retryRawEmail(createAdminClient(), createResend(), session.user.id, email.id, createExtractDeps());
+  await retryRawEmail(createAdminClient(), createResend(), email.id, createExtractDeps());
   return NextResponse.json({ ok: true });
 }

@@ -9,16 +9,12 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSessionClient } from "@/lib/supabase/server";
 import { ownerEmail } from "@/lib/config";
+import { safeNextPath } from "@/lib/redirect";
 
 export interface LoginState {
   step: "email" | "code";
   email: string;
   error: string | null;
-}
-
-function safeNext(next: FormDataEntryValue | null): string {
-  const value = typeof next === "string" ? next : "/";
-  return value.startsWith("/") && !value.startsWith("//") ? value : "/";
 }
 
 async function sendCode(email: string, next: string): Promise<LoginState> {
@@ -39,7 +35,7 @@ async function sendCode(email: string, next: string): Promise<LoginState> {
 /** One action for both steps: a form with a code verifies it, otherwise a code is sent. */
 export async function login(_prev: LoginState, form: FormData): Promise<LoginState> {
   const email = String(form.get("email") ?? "").trim().toLowerCase();
-  const next = safeNext(form.get("next"));
+  const next = safeNextPath(form.get("next"));
   const code = form.get("code");
   if (code === null) return sendCode(email, next);
 

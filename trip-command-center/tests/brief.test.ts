@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 import { buildBrief } from "@/lib/brief/build";
-import { currentTimezone, dueBriefs, type TripWithSegments } from "@/lib/brief/schedule";
+import { alreadyBriefed, currentTimezone, dueBriefs, type TripWithSegments } from "@/lib/brief/schedule";
 import type { Trip } from "@/lib/types";
 import { segment } from "./helpers";
 
@@ -129,6 +129,7 @@ describe("brief content", () => {
     expect(brief.push.title.replace(/\s/g, " ")).toBe("Tomorrow: DL 1234 TPA → ATL 1:05 PM");
     expect(brief.push.body).toContain("Leave home 9:50");
     expect(brief.push.body).toContain("1 item to review");
+    expect(brief.segment_ids).toEqual(expect.arrayContaining(["out1"]));
   });
 
   it("lists the hotel check-out and the trip home on the last day", async () => {
@@ -150,5 +151,21 @@ describe("brief content", () => {
     expect(brief.stops.map((s) => s.kind)).toEqual(["hotel_check_out"]);
     expect(brief.stops[0].address).toBe("70 Avenue des Champs-Elysees, Paris");
     expect(brief.time_difference).toMatch(/^Back on Florida time/);
+  });
+});
+
+describe("brief sent once per plan", () => {
+  const sent = [{ trip_id: "trip-old", for_date: "2027-06-24", segment_ids: ["out1", "out2"] }];
+
+  it("skips segments already briefed under a trip id that has since changed", () => {
+    expect(alreadyBriefed("trip-merged", "2027-06-24", ["out1", "hotel"], sent)).toBe(true);
+    // The trip row was deleted, so the stored trip id is null.
+    expect(alreadyBriefed("trip-merged", "2027-06-24", ["out1"], [{ ...sent[0], trip_id: null }])).toBe(true);
+  });
+
+  it("still sends other days, other segments, and leaves same-trip repeats to the claim", () => {
+    expect(alreadyBriefed("trip-merged", "2027-06-25", ["out1"], sent)).toBe(false);
+    expect(alreadyBriefed("trip-merged", "2027-06-24", ["back1"], sent)).toBe(false);
+    expect(alreadyBriefed("trip-old", "2027-06-24", ["out1"], sent)).toBe(false);
   });
 });
