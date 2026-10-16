@@ -4,12 +4,15 @@ import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Trip Command Center",
+  title: "Atlas",
   description: "Travel confirmations turned into one trip timeline, with a brief the evening before.",
-  applicationName: "Trips",
-  appleWebApp: { capable: true, title: "Trips", statusBarStyle: "default" },
+  applicationName: "Atlas",
+  appleWebApp: { capable: true, title: "Atlas", statusBarStyle: "default" },
   icons: {
-    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    icon: [
+      { url: "/icons/logo.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
   },
 };

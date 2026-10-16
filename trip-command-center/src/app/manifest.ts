@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Trip Command Center",
-    short_name: "Trips",
+    name: "Atlas",
+    short_name: "Atlas",
     description: "Trip timeline and day-before briefs from travel confirmations.",
     start_url: "/",
     scope: "/",

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="atlas-title">
+  <title id="atlas-title">Atlas</title>
+  <!-- Atlas: the Titan who holds up the heavens. A globe with a flight orbit
+       around it and a star above. Content stays inside the central 80% circle
+       so maskable app icons are not clipped. -->
+  <defs>
+    <clipPath id="atlas-globe">
+      <circle r="146"/>
+    </clipPath>
+  </defs>
+  <rect width="512" height="512" fill="#f5f4f1"/>
+  <g transform="translate(256 268)">
+    <!-- Orbit, back half: drawn first so the globe hides it. -->
+    <ellipse rx="196" ry="62" transform="rotate(-22)" fill="none" stroke="#BE2332" stroke-width="16"/>
+    <!-- Globe -->
+    <circle r="132" fill="#f5f4f1" stroke="#1b1b1f" stroke-width="20"/>
+    <ellipse rx="58" ry="132" fill="none" stroke="#1b1b1f" stroke-width="13"/>
+    <line x1="-132" y1="0" x2="132" y2="0" stroke="#1b1b1f" stroke-width="13"/>
+    <!-- Orbit, front half, with a gap only where it crosses the globe -->
+    <g clip-path="url(#atlas-globe)">
+      <path d="M -196 0 A 196 62 0 0 0 196 0" transform="rotate(-22)" fill="none" stroke="#f5f4f1" stroke-width="36"/>
+    </g>
+    <path d="M -196 0 A 196 62 0 0 0 196 0" transform="rotate(-22)" fill="none" stroke="#BE2332" stroke-width="16"/>
+    <!-- The plane, out in the open at the turn of the orbit -->
+    <circle cx="179" cy="-50" r="19" fill="#BE2332"/>
+  </g>
+  <!-- Star of the heavens Atlas carries -->
+  <path d="M 134 96 L 142 121 L 167 129 L 142 137 L 134 162 L 126 137 L 101 129 L 126 121 Z" fill="#BE2332"/>
+</svg>

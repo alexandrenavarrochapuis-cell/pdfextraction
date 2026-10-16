@@ -42,7 +42,7 @@ export function buildIcs(segments: Segment[], appUrl: string, now = new Date()):
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Trip Command Center//EN",
+    "PRODID:-//Atlas//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "X-WR-CALNAME:Trips",
@@ -62,7 +62,7 @@ export function buildIcs(segments: Segment[], appUrl: string, now = new Date()):
       .join("\n");
     lines.push(
       "BEGIN:VEVENT",
-      `UID:${s.id}@trip-command-center`,
+      `UID:${s.id}@atlas`,
       `DTSTAMP:${stamp(now.toISOString())}`,
       `DTSTART:${stamp(s.start_at)}`,
       `DTEND:${stamp(end)}`,

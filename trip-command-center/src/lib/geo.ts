@@ -109,7 +109,7 @@ export async function geocodeAddress(address: string): Promise<AddressResult | n
   url.searchParams.set("addressdetails", "1");
   try {
     const res = await fetch(url, {
-      headers: { "user-agent": "trip-command-center/0.1 (personal itinerary app)", "accept-language": "en" },
+      headers: { "user-agent": "atlas-travel/0.1 (personal itinerary app)", "accept-language": "en" },
       signal: AbortSignal.timeout(6000),
     });
     if (!res.ok) return null;

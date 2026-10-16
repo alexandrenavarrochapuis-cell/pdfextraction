@@ -1,19 +1,11 @@
-// Renders the PWA icons in public/icons from one SVG. Run: node scripts/generate-icons.mjs
+// Renders the PWA icons in public/icons from the Atlas logo (public/icons/logo.svg).
+// Run: node scripts/generate-icons.mjs
 import sharp from "sharp";
-import { mkdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 
-const svg = (size) => `
-<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#ffffff"/>
-  <rect x="0" y="0" width="512" height="56" fill="#BE2332"/>
-  <g transform="translate(256 290) rotate(45) translate(-150 -150) scale(12.5)" fill="none" stroke="#1b1b1f"
-     stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>
-  </g>
-</svg>`;
+const logo = readFileSync("public/icons/logo.svg");
 
-mkdirSync("public/icons", { recursive: true });
 for (const [name, size] of [["icon-192.png", 192], ["icon-512.png", 512], ["apple-touch-icon.png", 180]]) {
-  await sharp(Buffer.from(svg(size))).resize(size, size).png().toFile(`public/icons/${name}`);
+  await sharp(logo, { density: 300 }).resize(size, size).png().toFile(`public/icons/${name}`);
   console.log(`public/icons/${name}`);
 }

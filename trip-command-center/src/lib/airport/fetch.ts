@@ -10,7 +10,7 @@ const OVERPASS = "https://overpass-api.de/api/interpreter";
 async function run(query: string): Promise<AirportPoi[]> {
   const res = await fetch(OVERPASS, {
     method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded", "user-agent": "trip-command-center/0.1 (personal itinerary app)" },
+    headers: { "content-type": "application/x-www-form-urlencoded", "user-agent": "atlas-travel/0.1 (personal itinerary app)" },
     body: `data=${encodeURIComponent(query)}`,
     signal: AbortSignal.timeout(45_000),
   });

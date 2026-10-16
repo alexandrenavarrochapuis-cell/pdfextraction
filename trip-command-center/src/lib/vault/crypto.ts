@@ -3,7 +3,7 @@
 // iterations) and never leaves the device; data is sealed with AES-256-GCM.
 // Forgetting the passphrase makes the vault unreadable: there is no recovery.
 
-export const VAULT_CHECK = "trip-command-center-vault-v1";
+export const VAULT_CHECK = "atlas-vault-v1";
 const ITERATIONS = 600_000;
 
 export function toB64(bytes: Uint8Array): string {

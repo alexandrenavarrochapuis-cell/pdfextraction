@@ -1,4 +1,4 @@
-name: Trip Command Center
+name: Atlas
 
 on:
   pull_request:

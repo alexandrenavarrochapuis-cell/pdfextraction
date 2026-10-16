@@ -1,11 +1,14 @@
-# Trip Command Center
+# Atlas
 
-A mobile-first web app (installable on iPhone) that turns forwarded travel
-confirmations into one trip timeline, sends a brief the evening before each
-travel day, and keeps the family's boarding passes and travel documents in
-one place.
+<img src="public/icons/logo.svg" alt="Atlas logo" width="96" height="96">
 
-Built from the Phase 1 spec (itinerary timeline and day-before brief), plus
+Atlas, named for the Titan who holds up the heavens, is a mobile-first web
+app (installable on iPhone) that turns forwarded travel confirmations into one
+trip timeline, sends a brief the evening before each travel day, and keeps the
+family's boarding passes and travel documents in one place.
+
+Built from the Trip Command Center Phase 1 spec (itinerary timeline and
+day-before brief; the code still lives in `trip-command-center/`), plus
 the features requested afterwards: flight tracking, road trips, boarding
 passes, a document vault, an AI assistant and airport maps.
 
