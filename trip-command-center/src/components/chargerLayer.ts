@@ -5,7 +5,7 @@
 import L from "leaflet";
 import type { Charger } from "@/lib/chargers";
 
-const ACCENT = "#BE2332";
+const ACCENT = "#2047C4";
 
 // A square badge with a bolt, unlike the round stop markers, so shape alone
 // tells chargers apart.

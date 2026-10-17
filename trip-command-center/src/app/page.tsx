@@ -1,6 +1,5 @@
 // Screen 1: trips list. Upcoming first, then active, then past (spec section 6).
 
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
@@ -101,10 +100,7 @@ export default function TripsPage() {
   return (
     <>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h1 className="flex items-center gap-2 text-3xl font-bold">
-          <Image src="/icons/logo.svg" alt="Atlas" width={36} height={36} unoptimized priority className="rounded-lg" />
-          Trips
-        </h1>
+        <h1 className="text-3xl font-bold">Trips</h1>
         <div className="flex flex-wrap justify-end gap-2">
           <Link href="/airports" className="inline-flex min-h-12 items-center rounded-xl border-2 border-ink bg-paper px-4 font-bold">
             Airports

@@ -2,17 +2,35 @@
 
 <img src="public/icons/logo.svg" alt="Atlas logo" width="96" height="96">
 
-Atlas, named for the Titan who holds up the heavens, is a mobile-first web
-app (installable on iPhone) that turns forwarded travel confirmations into one
-trip timeline, sends a brief the evening before each travel day, and keeps the
-family's boarding passes and travel documents in one place.
+Atlas, named for the Titan who holds up the heavens, is an AI travel agent in
+a mobile-first web app (installable on iPhone and Android). It plans the
+family's personal and work trips in a chat, searches the web for flights,
+hotels, rental cars and drives, prepares the bookings up to checkout, and
+updates the trips when asked. Forwarded confirmations become one trip timeline,
+a brief arrives the evening before each travel day, and the family's boarding
+passes and travel documents sit in one place.
 
 Built from the Trip Command Center Phase 1 spec (itinerary timeline and
 day-before brief; the code still lives in `trip-command-center/`), plus
-the features requested afterwards: flight tracking, road trips, boarding
-passes, a document vault, an AI assistant and airport maps.
+the features requested afterwards.
 
 ## What it does
+
+**Atlas, the AI travel agent.** A chat on the Atlas tab (Claude `claude-opus-5-5`
+with web search, server-side fallbacks on a decline, and app tools). It reads
+the trips, plans with the family's preferences and loyalty accounts, compares
+options across the web, and gives booking pages with the trip filled in
+(Google Flights, Kayak, Skyscanner, Expedia, the airlines; Booking.com, Hilton,
+Marriott, Expedia, Airbnb; Kayak, Expedia and the rental companies). It cannot
+pay: the traveler signs in and checks out. When asked, it acts on the app:
+adds, edits, cancels or deletes bookings (deletes only after confirming),
+renames trips, saves places and travelers, and keeps notes it remembers
+between chats. It also plans drives with Tesla Superchargers, converts
+currency, gives the weather, and in an emergency gives the local number and
+the closest hospitals, pharmacies and police from the shared location.
+Conversations are stored append-only (`atlas_conversations`,
+`atlas_messages`), notes in `atlas_notes`.
+
 
 **Itinerary from email.** Forward airline, hotel, car, rail, Booking.com or
 Airbnb confirmations (or calendar invites) to the inbound address. The app
@@ -84,7 +102,7 @@ Places with `GOOGLE_MAPS_API_KEY`, OpenStreetMap (Photon) without it.
 
 ## Design rules
 
-Light background and dark text. The accent `#BE2332` is used sparingly.
+Light background and dark text. The accent, sapphire `#2047C4`, is used sparingly; the logo's star is gold `#E3A21A`.
 Every status and type has an icon and a text label, and statuses also differ
 by border: dashed means review, strikethrough means cancelled. Nothing relies
 on color alone, so every screen reads in grayscale. Tap targets are at least
@@ -153,7 +171,7 @@ Hosted on Vercel.
 npm install
 cp .env.example .env.local   # then fill it in
 npm run dev                  # http://localhost:3000
-npm test                     # Vitest, 113 tests, no network
+npm test                     # Vitest, 122 tests, no network
 npm run lint && npm run typecheck && npm run build
 ```
 

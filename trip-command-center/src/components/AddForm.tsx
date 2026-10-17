@@ -10,12 +10,13 @@ import { STOP_KIND_LABEL } from "@/lib/present";
 import { TypeIcon } from "./icons";
 import { PlaceSearch } from "./PlaceSearch";
 
-type Kind = "drive" | "stop" | "hotel" | "train" | "flight" | "event";
+type Kind = "drive" | "stop" | "hotel" | "car" | "train" | "flight" | "event";
 
 const KINDS: { kind: Kind; label: string }[] = [
   { kind: "drive", label: "Drive" },
   { kind: "stop", label: "Stop or meeting" },
   { kind: "hotel", label: "Stay" },
+  { kind: "car", label: "Rental car" },
   { kind: "train", label: "Train" },
   { kind: "flight", label: "Flight" },
   { kind: "event", label: "Event" },
@@ -145,7 +146,9 @@ export function AddForm({
       const f = new FormData(form);
       const v = (k: string) => String(f.get(k) ?? "").trim();
       const details: Record<string, string> = {};
-      for (const key of ["property_name", "flight_number", "seat", "note", "phone"]) if (v(key)) details[key] = v(key);
+      for (const key of ["property_name", "flight_number", "seat", "note", "phone", "vehicle_class"]) if (v(key)) details[key] = v(key);
+      // A rental returned where it was picked up needs no second place.
+      const dropoff = kind === "car" && !clean(destination) ? clean(origin) : clean(destination);
       const body = {
         type: kind,
         provider: v("provider") || undefined,
@@ -153,7 +156,7 @@ export function AddForm({
         start_local: v("start_local"),
         end_local: v("end_local") || undefined,
         origin: kind === "hotel" || kind === "stop" || kind === "event" ? undefined : clean(origin),
-        destination: clean(destination),
+        destination: dropoff,
         stops: kind === "drive" ? stops.map(clean).filter(Boolean) : undefined,
         vehicle: kind === "drive" ? (v("vehicle") === "Other" ? v("vehicle_other") : v("vehicle")) : undefined,
         stop_kind: kind === "stop" ? (v("stop_kind") as StopKind) : undefined,
@@ -229,6 +232,25 @@ export function AddForm({
         </div>
       ) : null}
 
+      {kind === "car" ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className={labelCls}>
+            <span className="font-semibold">Rental company</span>
+            <select name="provider" className={input} defaultValue="National">
+              {["National", "Hertz", "Avis", "Enterprise", "Alamo", "Budget", "Sixt", "Europcar", "Other"].map((c) => (
+                <option key={c} value={c === "Other" ? "" : c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={labelCls}>
+            <span className="font-semibold">Car class (optional)</span>
+            <input name="vehicle_class" className={input} placeholder="Midsize SUV, Tesla Model Y…" />
+          </label>
+        </div>
+      ) : null}
+
       {kind === "flight" ? (
         <label className={labelCls}>
           <span className="font-semibold">Flight number</span>
@@ -254,8 +276,8 @@ export function AddForm({
         </label>
       ) : null}
 
-      {kind === "drive" || kind === "flight" || kind === "train" ? (
-        <PlacePicker title="From" places={places} value={origin} onChange={setOrigin} mode={placeMode} />
+      {kind === "drive" || kind === "flight" || kind === "train" || kind === "car" ? (
+        <PlacePicker title={kind === "car" ? "Pick up at" : "From"} places={places} value={origin} onChange={setOrigin} mode={placeMode} />
       ) : null}
 
       {kind === "drive" ? (
@@ -295,7 +317,15 @@ export function AddForm({
       ) : null}
 
       <PlacePicker
-        title={kind === "drive" ? "To" : kind === "hotel" ? "Where you are staying" : kind === "flight" || kind === "train" ? "To" : "Where"}
+        title={
+          kind === "car"
+            ? "Return at (leave empty if the same place)"
+            : kind === "drive" || kind === "flight" || kind === "train"
+              ? "To"
+              : kind === "hotel"
+                ? "Where you are staying"
+                : "Where"
+        }
         places={places}
         value={destination}
         onChange={setDestination}
@@ -305,13 +335,13 @@ export function AddForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <label className={labelCls}>
           <span className="font-semibold">
-            {kind === "hotel" ? "Check-in" : kind === "drive" ? "Leave" : "Starts"} (local time there)
+            {kind === "hotel" ? "Check-in" : kind === "car" ? "Pick up" : kind === "drive" ? "Leave" : "Starts"} (local time there)
           </span>
           <input name="start_local" type="datetime-local" required className={input} defaultValue={prefill.start_local} />
         </label>
         <label className={labelCls}>
           <span className="font-semibold">
-            {kind === "hotel" ? "Check-out" : kind === "drive" || kind === "flight" || kind === "train" ? "Arrive" : "Ends"}{" "}
+            {kind === "hotel" ? "Check-out" : kind === "car" ? "Return" : kind === "drive" || kind === "flight" || kind === "train" ? "Arrive" : "Ends"}{" "}
             (optional)
           </span>
           <input name="end_local" type="datetime-local" className={input} defaultValue={prefill.end_local} />

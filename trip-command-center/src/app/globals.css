@@ -2,18 +2,22 @@
 
 /*
  * Design rules (spec section 6): light background, dark text, no
- * white-on-black screens; accent #BE2332 used sparingly; never rely on color
+ * white-on-black screens; accent sapphire #2047C4 used sparingly; never rely on color
  * alone (every status and type also has an icon, a text label, or a border
  * style); large tap targets for one-handed use in an airport.
  */
 @theme {
-  --color-accent: #be2332;
-  --color-accent-soft: #fbeaec;
-  --color-ink: #1b1b1f;
-  --color-muted: #505259;
-  --color-canvas: #f5f4f1;
+  --color-accent: #2047c4;
+  --color-gold: #e3a21a;
+  --color-accent-soft: #e8eefc;
+  --color-ink: #14161b;
+  --color-muted: #525866;
+  --color-canvas: #f3f5f9;
   --color-paper: #ffffff;
-  --color-line: #cfccc6;
+  --color-line: #d7dce5;
+  --shadow-card: 0 1px 2px rgb(20 22 27 / 0.05), 0 6px 20px -8px rgb(20 22 27 / 0.12);
+  --shadow-float: 0 2px 6px rgb(20 22 27 / 0.06), 0 16px 40px -12px rgb(20 22 27 / 0.22);
+  --animate-rise: rise 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial,
     sans-serif;
 }
@@ -36,6 +40,93 @@ body {
 
 a {
   text-underline-offset: 3px;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.015em;
+}
+
+/* Cards float slightly above the canvas. */
+:where(.rounded-2xl.bg-paper, .rounded-3xl.bg-paper) {
+  box-shadow: var(--shadow-card);
+}
+
+/* Pressable surfaces give way under the finger. */
+:where(a.rounded-2xl, a.rounded-xl, button.rounded-xl, button.rounded-full) {
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+:where(a.rounded-2xl, a.rounded-xl, button.rounded-xl, button.rounded-full):active {
+  transform: scale(0.98);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Loading placeholders shaped like the content they stand for. */
+.skeleton {
+  background: linear-gradient(90deg, #e7ebf2 25%, #f3f5f9 50%, #e7ebf2 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Atlas is typing. */
+.typing-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+.typing-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  animation: typing 1.2s ease-in-out infinite;
+}
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: none;
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .typing-dots span,
+  .animate-rise {
+    animation: none !important;
+  }
 }
 
 /* Visible focus for keyboard and switch control users. */
@@ -72,4 +163,47 @@ details[open] .chevron {
 .plane-icon {
   background: none;
   border: none;
+}
+
+/* Atlas mark: the star twinkles, the globe breathes while Atlas thinks.
+   The orbiting plane is an SVG animateMotion in AtlasMark. */
+.atlas-mark .atlas-star,
+.atlas-mark .atlas-globe {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.atlas-mark-idle .atlas-star {
+  animation: atlas-twinkle 3.2s ease-in-out infinite;
+}
+.atlas-mark-thinking .atlas-star {
+  animation: atlas-twinkle 1s ease-in-out infinite;
+}
+.atlas-mark-thinking .atlas-globe {
+  animation: atlas-breathe 1.6s ease-in-out infinite;
+}
+@keyframes atlas-twinkle {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.35) rotate(45deg);
+    opacity: 0.7;
+  }
+}
+@keyframes atlas-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlas-mark .atlas-star,
+  .atlas-mark .atlas-globe {
+    animation: none !important;
+  }
 }
