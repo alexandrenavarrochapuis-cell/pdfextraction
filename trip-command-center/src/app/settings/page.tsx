@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
 import { allowedForwarders, inboundAddress } from "@/lib/config";
 import type { Profile, SavedPlace, Traveler } from "@/lib/types";
+import { subscribeLinks } from "@/lib/calendar/links";
 import { CopyButton } from "@/components/CopyButton";
 import { PushToggle } from "@/components/PushToggle";
 import { Loading } from "@/components/Loading";
@@ -190,19 +191,27 @@ async function SettingsBody() {
         {feedUrl ? (
           <>
             <p className="break-all font-mono text-sm">{feedUrl}</p>
+            <p className="font-semibold">Add it to your calendar:</p>
             <div className="flex flex-wrap gap-2">
+              {subscribeLinks(feedUrl).map((l) => (
+                <a
+                  key={l.label}
+                  href={l.href}
+                  target={l.href.startsWith("https:") ? "_blank" : undefined}
+                  rel="noreferrer"
+                  className="inline-flex min-h-12 items-center rounded-xl border-2 border-ink bg-paper px-4 font-semibold"
+                >
+                  {l.label}
+                </a>
+              ))}
               <CopyButton value={feedUrl} label="Copy link" />
-              <a
-                href={feedUrl.replace(/^https:/, "webcal:")}
-                className="inline-flex min-h-12 items-center rounded-xl border border-line bg-paper px-4 font-semibold"
-              >
-                Subscribe on this iPhone
-              </a>
             </div>
             <ul className="list-disc space-y-1 pl-6 text-sm">
-              <li>Outlook: Calendar, Add calendar, Subscribe from web, paste the link.</li>
-              <li>Google Calendar: Other calendars, +, From URL, paste the link.</li>
-              <li>Apple Calendar: tap Subscribe on this iPhone.</li>
+              <li>
+                Google Calendar opens on the web: confirm Add. On Android, the trips then show in the Calendar app; if
+                not, turn on sync for Atlas in its settings. Google refreshes subscribed calendars a few times a day.
+              </li>
+              <li>If a button does not work, copy the link and add it as a calendar &ldquo;from URL&rdquo; or &ldquo;from web&rdquo;.</li>
             </ul>
             <div className="flex flex-wrap gap-2">
               <form action={rotateCalendarToken}>

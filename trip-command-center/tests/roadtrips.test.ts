@@ -204,6 +204,28 @@ describe("road trips", () => {
     ]);
     expect(values.destination?.name).toBe("Home");
   });
+
+  it("still saves a drive whose address the map cannot find, flagged for review", async () => {
+    const noDb = {} as SupabaseClient;
+    const { values, reasons } = await buildManualSegment(
+      noDb,
+      {
+        type: "drive",
+        start_local: "2027-05-03T09:00",
+        origin: { address: "12 Nowhere Lane" },
+        destination: { address: "Gainesville, FL" },
+      },
+      {
+        geocodeCity: stubGeocoder,
+        geocodeAddress: async (a) =>
+          a.startsWith("Gainesville") ? { lat: 29.65, lng: -82.32, city: "Gainesville", country: "US", tz: "America/New_York" } : null,
+      },
+    );
+    // The start falls back to the destination's zone.
+    expect(values.start_at).toBe("2027-05-03T13:00:00.000Z");
+    expect(values.status).toBe("needs_review");
+    expect(reasons).toEqual(["12 Nowhere Lane not found on the map; check the address and the time"]);
+  });
 });
 
 describe("stays", () => {

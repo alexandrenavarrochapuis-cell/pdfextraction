@@ -8,6 +8,7 @@ import { finalizeDraft, type DraftSegment, type Geocoder } from "../ingest/draft
 import { PlaceInputSchema, resolvePlace, type PlaceDeps } from "../places";
 import { normalizeCode } from "./dedupe";
 import type { SegmentValues } from "./apply";
+import { userTimezone } from "../config";
 
 /** Google Maps directions links accept up to 9 waypoints. */
 export const MAX_STOPS = 9;
@@ -31,6 +32,11 @@ export const CreateSegmentSchema = z.object({
 });
 export type CreateSegmentInput = z.infer<typeof CreateSegmentSchema>;
 
+/** A typed address or saved place that has no coordinates. */
+function noteUnmapped(place: Place, out: string[]) {
+  if (place.lat == null && !place.code) out.push(place.name || place.address || place.city || "A place");
+}
+
 export async function buildManualSegment(
   db: SupabaseClient,
   input: CreateSegmentInput,
@@ -39,9 +45,14 @@ export async function buildManualSegment(
   const origin = await resolvePlace(db, input.origin, deps);
   const destination = await resolvePlace(db, input.destination, deps);
   const stops: Place[] = [];
+  const unmapped: string[] = [];
+  for (const r of [origin, destination]) if (r) noteUnmapped(r.place, unmapped);
   for (const s of input.stops ?? []) {
     const r = await resolvePlace(db, s, deps);
-    if (r) stops.push(r.place);
+    if (r) {
+      stops.push(r.place);
+      noteUnmapped(r.place, unmapped);
+    }
   }
 
   const startPlace = input.type === "hotel" || input.type === "stop" || input.type === "event" ? destination : origin ?? destination;
@@ -66,7 +77,9 @@ export async function buildManualSegment(
     confirmation_code: input.confirmation_code || null,
     provider: input.provider || null,
     start_local: input.start_local,
-    start_tz: startPlace?.tz ?? null,
+    // A place the map could not find has no zone; fall back to the other end,
+    // then to home, so the entry is still saved (and flagged below).
+    start_tz: startPlace?.tz ?? origin?.tz ?? destination?.tz ?? userTimezone(),
     end_local: input.end_local || null,
     end_tz: (input.type === "hotel" || input.type === "stop" ? destination?.tz : destination?.tz ?? origin?.tz) ?? null,
     origin: origin?.place ?? null,
@@ -75,6 +88,7 @@ export async function buildManualSegment(
     confidence: 1,
   };
   const seg = await finalizeDraft(draft, deps.geocodeCity);
+  seg.review_reasons.push(...unmapped.map((p) => `${p} not found on the map; check the address and the time`));
   return {
     reasons: seg.review_reasons,
     values: {

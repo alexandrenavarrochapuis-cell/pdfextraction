@@ -3,6 +3,7 @@
 // https://open-meteo.com/en/docs/geocoding-api
 
 import type { GeoResult, Geocoder } from "./ingest/draft";
+import { photonSearch } from "./place-search";
 
 interface OpenMeteoGeoResponse {
   results?: {
@@ -99,9 +100,17 @@ export async function timezoneAt(lat: number, lng: number): Promise<string | nul
  * Street address to coordinates with OpenStreetMap Nominatim. Its usage
  * policy allows light use (about one request a second, identified client),
  * which fits a single-user app that geocodes only when a place is saved.
+ * Nominatim wants fairly exact addresses, so Photon's fuzzier search over the
+ * same data is the fallback.
  * https://operations.osmfoundation.org/policies/nominatim/
  */
 export async function geocodeAddress(address: string): Promise<AddressResult | null> {
+  const hit = (await nominatim(address)) ?? (await photonFirst(address));
+  if (!hit) return null;
+  return { ...hit, tz: await timezoneAt(hit.lat, hit.lng) };
+}
+
+async function nominatim(address: string): Promise<Omit<AddressResult, "tz"> | null> {
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.set("q", address);
   url.searchParams.set("format", "jsonv2");
@@ -115,19 +124,23 @@ export async function geocodeAddress(address: string): Promise<AddressResult | n
     if (!res.ok) return null;
     const [hit] = (await res.json()) as NominatimResult[];
     if (!hit) return null;
-    const lat = Number(hit.lat);
-    const lng = Number(hit.lon);
     const a = hit.address ?? {};
     return {
-      lat,
-      lng,
+      lat: Number(hit.lat),
+      lng: Number(hit.lon),
       city: a.city ?? a.town ?? a.village ?? a.municipality ?? a.hamlet ?? a.county ?? null,
       region: a.state ?? null,
       country: a.country_code ? a.country_code.toUpperCase() : null,
-      tz: await timezoneAt(lat, lng),
       display: hit.display_name,
     };
   } catch {
     return null;
   }
+}
+
+async function photonFirst(address: string): Promise<Omit<AddressResult, "tz"> | null> {
+  const [hit] = await photonSearch(address, null, 1);
+  if (!hit?.place) return null;
+  const { lat, lng, city, region, country, address: display } = hit.place;
+  return { lat, lng, city, region, country, display };
 }

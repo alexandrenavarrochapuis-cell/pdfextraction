@@ -6,6 +6,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { prepareUpload, tooLargeMessage } from "@/lib/upload";
+import { FileField } from "./FileField";
 
 const input = "min-h-12 w-full rounded-xl border-2 border-line bg-paper px-3";
 
@@ -21,32 +23,36 @@ export function PassUpload({
   const router = useRouter();
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   return (
     <form
       className="space-y-3"
       onSubmit={(e) => {
         e.preventDefault();
         const form = e.currentTarget;
+        if (!file) return setMessage("Error: take a photo of the pass or choose its file.");
         start(async () => {
-          const res = await fetch("/api/passes", { method: "POST", body: new FormData(form) });
+          const upload = await prepareUpload(file);
+          const tooLarge = tooLargeMessage(upload);
+          if (tooLarge) return setMessage(`Error: ${tooLarge}`);
+          const body = new FormData(form);
+          body.set("file", upload);
+          const res = await fetch("/api/passes", { method: "POST", body });
           const data = (await res.json().catch(() => ({}))) as { error?: string };
-          if (!res.ok) return setMessage(`Error: ${data.error ?? res.status}`);
+          if (!res.ok) return setMessage(`Error: ${data.error ?? `the upload failed (${res.status})`}`);
           setMessage("Pass saved.");
           form.reset();
+          setFile(null);
           router.refresh();
         });
       }}
     >
-      <label className="block space-y-1">
-        <span className="font-semibold">Pass file (Wallet pass, PDF or screenshot)</span>
-        <input
-          name="file"
-          type="file"
-          required
-          accept=".pkpass,application/vnd.apple.pkpass,application/pdf,image/png,image/jpeg,image/webp,image/heic"
-          className="block min-h-12 w-full"
-        />
-      </label>
+      <FileField
+        label="Pass (Wallet pass, PDF, screenshot or photo)"
+        accept=".pkpass,application/vnd.apple.pkpass,application/pdf,image/png,image/jpeg,image/webp,image/heic"
+        file={file}
+        onChange={setFile}
+      />
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block space-y-1">
           <span className="font-semibold">Flight</span>

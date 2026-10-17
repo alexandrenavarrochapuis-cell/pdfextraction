@@ -71,8 +71,8 @@ async function Passes({ searchParams }: { searchParams: Promise<{ segment?: stri
       <section className="space-y-3 rounded-2xl border border-line bg-paper p-4">
         <h2 className="text-xl font-bold">Add a boarding pass</h2>
         <p className="text-muted">
-          From Apple Wallet: open the pass, tap Share, then Mail it to your inbound address. Or save the PDF or a
-          screenshot and choose it here.
+          Take a photo of a printed pass or another phone&rsquo;s screen, or choose the airline&rsquo;s PDF or a screenshot. From
+          Apple Wallet: open the pass, tap Share, then Mail it to your inbound address.
         </p>
         <PassUpload
           flights={flightOptions}

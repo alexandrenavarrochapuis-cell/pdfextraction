@@ -145,7 +145,7 @@ Hosted on Vercel.
 npm install
 cp .env.example .env.local   # then fill it in
 npm run dev                  # http://localhost:3000
-npm test                     # Vitest, 102 tests, no network
+npm test                     # Vitest, 108 tests, no network
 npm run lint && npm run typecheck && npm run build
 ```
 

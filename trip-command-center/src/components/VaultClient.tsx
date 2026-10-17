@@ -20,6 +20,8 @@ import { expiryStatus } from "@/lib/vault/expiry";
 import type { DocumentKind, TravelDocument, Traveler } from "@/lib/types";
 import { AlertIcon, CheckIcon, LockIcon } from "./icons";
 import { CopyButton } from "./CopyButton";
+import { FileField } from "./FileField";
+import { prepareUpload, tooLargeMessage } from "@/lib/upload";
 
 const KIND_LABEL: Record<DocumentKind, string> = {
   passport: "Passport",
@@ -160,6 +162,7 @@ function AddDocument({ travelers, vaultKey }: { travelers: Traveler[]; vaultKey:
   const router = useRouter();
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+  const [scan, setScan] = useState<File | null>(null);
   return (
     <form
       className="space-y-3"
@@ -168,6 +171,9 @@ function AddDocument({ travelers, vaultKey }: { travelers: Traveler[]; vaultKey:
         const form = e.currentTarget;
         const f = new FormData(form);
         start(async () => {
+          const upload = scan ? await prepareUpload(scan) : null;
+          const tooLarge = upload ? tooLargeMessage(upload) : null;
+          if (tooLarge) return setMessage(`Error: ${tooLarge}`);
           const secret: Secret = { number: String(f.get("number") ?? ""), notes: String(f.get("notes") ?? "") };
           const sealed = await encryptText(vaultKey, JSON.stringify(secret));
           const res = await fetch("/api/vault/documents", {
@@ -184,17 +190,25 @@ function AddDocument({ travelers, vaultKey }: { travelers: Traveler[]; vaultKey:
           });
           const data = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
           if (!res.ok || !data.id) return setMessage(`Error: ${data.error ?? res.status}`);
-          const scan = f.get("scan");
-          if (scan instanceof File && scan.size) {
-            const { iv, data: cipher } = await encryptBytes(vaultKey, new Uint8Array(await scan.arrayBuffer()));
-            await fetch(`/api/vault/documents/${data.id}/scan`, {
+          if (upload) {
+            const { iv, data: cipher } = await encryptBytes(vaultKey, new Uint8Array(await upload.arrayBuffer()));
+            const put = await fetch(`/api/vault/documents/${data.id}/scan`, {
               method: "PUT",
-              headers: { "x-scan-iv": iv, "x-scan-type": scan.type || "image/jpeg" },
+              headers: { "x-scan-iv": iv, "x-scan-type": upload.type || "image/jpeg" },
               body: cipher,
             });
+            if (!put.ok) {
+              const err = (await put.json().catch(() => ({}))) as { error?: string };
+              setMessage(`Saved the details, but the scan did not upload: ${err.error ?? put.status}. Delete the entry and save it again.`);
+              form.reset();
+              setScan(null);
+              router.refresh();
+              return;
+            }
           }
           setMessage("Saved, encrypted on this device before upload.");
           form.reset();
+          setScan(null);
           router.refresh();
         });
       }}
@@ -237,10 +251,9 @@ function AddDocument({ travelers, vaultKey }: { travelers: Traveler[]; vaultKey:
           <span className="font-semibold">Notes (encrypted)</span>
           <textarea name="notes" className={`${input} min-h-24 py-2`} placeholder="Known Traveler Number, redress number…" />
         </label>
-        <label className="block space-y-1 sm:col-span-2">
-          <span className="font-semibold">Scan or photo (encrypted, optional)</span>
-          <input name="scan" type="file" accept="image/*,application/pdf" className="block min-h-12 w-full" />
-        </label>
+        <div className="sm:col-span-2">
+          <FileField label="Scan or photo (encrypted, optional)" accept="image/*,application/pdf" file={scan} onChange={setScan} />
+        </div>
       </div>
       {message ? <p role="status" className="font-semibold">{message}</p> : null}
       <button className={primary} disabled={pending}>
