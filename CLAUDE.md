@@ -11,6 +11,7 @@ Scotty Budget Extractor: a Flask web app where analysts drag and drop a governme
 - `templates/index.html` - the single-page drag-and-drop UI (vanilla HTML/CSS/JS, no build step).
 - `render.yaml` - Render.com deployment (gunicorn, Python 3.12). `requirements.txt` pins Flask, gunicorn and pymupdf.
 - `dream-kit/` - a separate, self-contained Claude Code memory-consolidation kit. It is not part of the web app.
+- `trip-command-center/` - Atlas, a separate Next.js 16 + Supabase PWA (travel timeline, day-before brief, boarding passes, document vault, AI assistant). It has its own `package.json`, tests (`npm test`) and README; it shares nothing with the Flask app. Its `AGENTS.md` notes that Next.js 16 differs from older versions: read `node_modules/next/dist/docs/` before changing it.
 
 Run locally with `pip install -r requirements.txt` then `python3 app.py`, and open http://localhost:5000. There is no test suite yet. The sections below are the Claude Code Templates Python defaults; the pytest, black, isort, flake8 and mypy commands apply once those tools are added to the project.
 

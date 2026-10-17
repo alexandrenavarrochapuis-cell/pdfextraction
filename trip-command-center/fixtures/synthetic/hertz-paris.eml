@@ -1,0 +1,23 @@
+From: Alex Example <alex@sidus.group>
+To: trips@example.com
+Subject: Fwd: Your Hertz Reservation H7790122
+Date: Wed, 17 Mar 2027 11:00:00 -0400
+Message-ID: <synthetic-hertz-1@example.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+
+<html><head>
+<script type="application/ld+json">
+{"@context":"http://schema.org","@type":"RentalCarReservation","reservationNumber":"H7790122",
+ "reservationStatus":"http://schema.org/ReservationConfirmed",
+ "underName":{"@type":"Person","name":"Alex Example"},
+ "reservationFor":{"@type":"RentalCar","name":"Compact","model":"208","brand":{"@type":"Brand","name":"Peugeot"},
+  "rentalCompany":{"@type":"Organization","name":"Hertz"}},
+ "pickupLocation":{"@type":"Place","name":"Hertz Paris Charles de Gaulle Airport",
+  "address":{"@type":"PostalAddress","streetAddress":"Terminal 2","addressLocality":"Paris","addressCountry":"FR"}},
+ "pickupTime":"2027-07-02T09:30:00+02:00",
+ "dropoffLocation":{"@type":"Place","name":"Hertz Paris Gare de Lyon",
+  "address":{"@type":"PostalAddress","streetAddress":"193 Rue de Bercy","addressLocality":"Paris","addressCountry":"FR"}},
+ "dropoffTime":"2027-07-05T18:00:00+02:00"}
+</script>
+</head><body><p>---------- Forwarded message ---------<br>SYNTHETIC TEST FIXTURE.</p></body></html>

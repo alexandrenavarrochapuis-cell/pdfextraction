@@ -1,0 +1,72 @@
+Return-Path: <alex+caf_=trips=example.com@sidus.group>
+X-Forwarded-For: alex@sidus.group trips@example.com
+X-Forwarded-To: trips@example.com
+From: Delta Air Lines <DeltaAirLines@t.delta.com>
+To: Alex Example <alex@sidus.group>
+Subject: Your Flight Receipt - EXAMPLE ALEX 24JUN27
+Date: Mon, 15 Mar 2027 10:12:00 -0400
+Message-ID: <synthetic-delta-1@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="b1"
+
+--b1
+Content-Type: text/plain; charset=utf-8
+
+SYNTHETIC TEST FIXTURE. Not a real booking.
+Confirmation #: G7XK2P
+Thu 24JUN  DL 1234  Tampa (TPA) 1:05pm  ->  Atlanta (ATL) 2:40pm
+Thu 24JUN  DL 84    Atlanta (ATL) 5:45pm ->  Paris (CDG) 8:05am Fri 25JUN
+Wed 14JUL  DL 85    Paris (CDG) 10:30am ->  Atlanta (ATL) 2:10pm
+Wed 14JUL  DL 2201  Atlanta (ATL) 4:20pm -> Tampa (TPA) 5:50pm
+
+--b1
+Content-Type: text/html; charset=utf-8
+
+<html><head>
+<script type="application/ld+json">
+[
+ {"@context":"http://schema.org","@type":"FlightReservation","reservationNumber":"G7XK2P",
+  "reservationStatus":"http://schema.org/ReservationConfirmed",
+  "underName":{"@type":"Person","name":"Alex Example"},
+  "airplaneSeat":"12C","airplaneSeatClass":{"@type":"AirplaneSeatClass","name":"Comfort+"},
+  "checkinUrl":"https://www.delta.com/check-in",
+  "reservationFor":{"@type":"Flight","flightNumber":"1234",
+   "airline":{"@type":"Airline","name":"Delta Air Lines","iataCode":"DL"},
+   "departureAirport":{"@type":"Airport","name":"Tampa International Airport","iataCode":"TPA"},
+   "departureTime":"2027-06-24T13:05:00-04:00",
+   "arrivalAirport":{"@type":"Airport","name":"Hartsfield-Jackson Atlanta International","iataCode":"ATL"},
+   "arrivalTime":"2027-06-24T14:40:00-04:00"}},
+ {"@context":"http://schema.org","@type":"FlightReservation","reservationNumber":"G7XK2P",
+  "reservationStatus":"http://schema.org/ReservationConfirmed",
+  "underName":{"@type":"Person","name":"Alex Example"},
+  "airplaneSeat":"24A",
+  "checkinUrl":"https://www.delta.com/check-in",
+  "reservationFor":{"@type":"Flight","flightNumber":"84",
+   "airline":{"@type":"Airline","name":"Delta Air Lines","iataCode":"DL"},
+   "departureAirport":{"@type":"Airport","name":"Hartsfield-Jackson Atlanta International","iataCode":"ATL"},
+   "departureTime":"2027-06-24T17:45:00-04:00","departureTerminal":"F",
+   "arrivalAirport":{"@type":"Airport","name":"Paris Charles de Gaulle","iataCode":"CDG"},
+   "arrivalTime":"2027-06-25T08:05:00+02:00","arrivalTerminal":"2E"}},
+ {"@context":"http://schema.org","@type":"FlightReservation","reservationNumber":"G7XK2P",
+  "reservationStatus":"http://schema.org/ReservationConfirmed",
+  "underName":{"@type":"Person","name":"Alex Example"},
+  "reservationFor":{"@type":"Flight","flightNumber":"85",
+   "airline":{"@type":"Airline","name":"Delta Air Lines","iataCode":"DL"},
+   "departureAirport":{"@type":"Airport","name":"Paris Charles de Gaulle","iataCode":"CDG"},
+   "departureTime":"2027-07-14T10:30:00+02:00",
+   "arrivalAirport":{"@type":"Airport","name":"Hartsfield-Jackson Atlanta International","iataCode":"ATL"},
+   "arrivalTime":"2027-07-14T14:10:00-04:00"}},
+ {"@context":"http://schema.org","@type":"FlightReservation","reservationNumber":"G7XK2P",
+  "reservationStatus":"http://schema.org/ReservationConfirmed",
+  "underName":{"@type":"Person","name":"Alex Example"},
+  "reservationFor":{"@type":"Flight","flightNumber":"2201",
+   "airline":{"@type":"Airline","name":"Delta Air Lines","iataCode":"DL"},
+   "departureAirport":{"@type":"Airport","name":"Hartsfield-Jackson Atlanta International","iataCode":"ATL"},
+   "departureTime":"2027-07-14T16:20:00-04:00",
+   "arrivalAirport":{"@type":"Airport","name":"Tampa International Airport","iataCode":"TPA"},
+   "arrivalTime":"2027-07-14T17:50:00-04:00"}}
+]
+</script>
+</head><body><p>SYNTHETIC TEST FIXTURE. Your trip confirmation G7XK2P.</p></body></html>
+
+--b1--

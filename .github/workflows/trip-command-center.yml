@@ -1,0 +1,40 @@
+name: Atlas
+
+on:
+  pull_request:
+    paths:
+      - "trip-command-center/**"
+      - ".github/workflows/trip-command-center.yml"
+  push:
+    branches: [main]
+    paths:
+      - "trip-command-center/**"
+      - ".github/workflows/trip-command-center.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trip-command-center-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: trip-command-center
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: trip-command-center/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      # Offline: synthetic fixtures with Claude and the geocoder stubbed.
+      - run: npm test
+      - run: npm run build
