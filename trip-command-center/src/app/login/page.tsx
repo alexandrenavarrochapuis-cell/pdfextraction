@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { AtlasMark } from "@/components/AtlasMark";
+import { ClearOfflineCopies } from "@/components/Offline";
 import { LoginForm } from "./LoginForm";
 
 export default function LoginPage() {
@@ -15,6 +16,7 @@ export default function LoginPage() {
       <Suspense>
         <LoginForm />
       </Suspense>
+      <ClearOfflineCopies />
     </div>
   );
 }

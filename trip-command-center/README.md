@@ -31,6 +31,22 @@ the closest hospitals, pharmacies and police from the shared location.
 Conversations are stored append-only (`atlas_conversations`,
 `atlas_messages`), notes in `atlas_notes`.
 
+**On-trip mode.** While a trip is under way, or from a day before it leaves,
+a Today card sits on top of the Trips screen. It shows what is under way and
+what is next, with a live countdown, when to leave (home or the airport),
+terminal, gate and seat, and buttons for the boarding pass, check-in, the
+airport map, directions, the hotel's phone and the confirmation code. It also
+shows the local time next to home time, the day's weather where you are, a
+converter between the local currency and dollars, the local emergency number
+(and the State Department line abroad), SOS, which asks Atlas for the closest
+help, and Ask Atlas.
+
+**Offline.** Each time the Trips screen opens with a connection, the trips
+under way and coming up, the Passes screen, each boarding pass barcode and
+the pass files are saved on the phone (`public/sw.js`). Without a connection,
+those pages open from the saved copy and a banner says so; the countdown,
+clocks and currency converter keep working. Atlas, uploads and changes need a
+connection. The sign-in page deletes every saved copy.
 
 **Itinerary from email.** Forward airline, hotel, car, rail, Booking.com or
 Airbnb confirmations (or calendar invites) to the inbound address. The app
@@ -171,7 +187,7 @@ Hosted on Vercel.
 npm install
 cp .env.example .env.local   # then fill it in
 npm run dev                  # http://localhost:3000
-npm test                     # Vitest, 122 tests, no network
+npm test                     # Vitest, 134 tests, no network
 npm run lint && npm run typecheck && npm run build
 ```
 

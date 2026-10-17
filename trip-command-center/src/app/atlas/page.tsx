@@ -1,5 +1,5 @@
 // Atlas, the assistant: the latest conversation (or the one picked), ready to
-// continue.
+// continue. ?sos=1 (from the Today card) asks for help nearby right away.
 
 import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
@@ -7,8 +7,10 @@ import { toChatItems, type StoredMessage } from "@/lib/atlas/transcript";
 import { AtlasChat } from "@/components/AtlasChat";
 import { Loading } from "@/components/Loading";
 
-async function Chat({ searchParams }: { searchParams: Promise<{ c?: string; new?: string }> }) {
-  const { c, new: fresh } = await searchParams;
+type Params = { c?: string; new?: string; sos?: string };
+
+async function Chat({ searchParams }: { searchParams: Promise<Params> }) {
+  const { c, new: fresh, sos } = await searchParams;
   const { db } = await requireUser();
   const { data: conversations } = await db
     .from("atlas_conversations")
@@ -26,6 +28,7 @@ async function Chat({ searchParams }: { searchParams: Promise<{ c?: string; new?
       initialItems={toChatItems((messages ?? []) as StoredMessage[])}
       conversationId={picked}
       conversations={list}
+      sos={sos === "1"}
     />
   );
 }
@@ -35,7 +38,7 @@ export default function AtlasPage({ searchParams }: PageProps<"/atlas">) {
     <>
       <h1 className="sr-only">Atlas</h1>
       <Suspense fallback={<Loading label="Opening Atlas…" />}>
-        <Chat searchParams={searchParams as Promise<{ c?: string; new?: string }>} />
+        <Chat searchParams={searchParams as Promise<Params>} />
       </Suspense>
     </>
   );

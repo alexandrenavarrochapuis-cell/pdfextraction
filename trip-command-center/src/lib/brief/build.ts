@@ -138,7 +138,11 @@ function departureFrom(seg: Segment): BriefDeparture {
   };
 }
 
-function leaveBy(seg: Segment, input: BuildBriefInput): BriefLeaveBy {
+/** When to leave for a flight: from home when it departs a home airport, else at the airport. */
+export function leaveBy(
+  seg: Segment,
+  input: Pick<BuildBriefInput, "homeAirports" | "homeTz" | "driveMinutes">,
+): BriefLeaveBy {
   const departMs = Date.parse(seg.start_at!);
   const buffer = isInternational(seg) ? INTERNATIONAL_BUFFER_MIN : DOMESTIC_BUFFER_MIN;
   const code = seg.origin?.code?.toUpperCase() ?? null;

@@ -6,7 +6,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import type { AtlasEvent } from "@/lib/atlas/agent";
 import type { AtlasAction } from "@/lib/atlas/tools";
 import type { ChatItem } from "@/lib/atlas/transcript";
@@ -32,10 +32,13 @@ export function AtlasChat({
   initialItems,
   conversationId: initialId,
   conversations,
+  sos = false,
 }: {
   initialItems: ChatItem[];
   conversationId: string | null;
   conversations: { id: string; title: string | null }[];
+  /** Ask for emergency help as soon as the chat opens. */
+  sos?: boolean;
 }) {
   const router = useRouter();
   const [items, setItems] = useState<LiveItem[]>(initialItems);
@@ -144,6 +147,18 @@ export function AtlasChat({
       here,
     );
   }
+
+  // Once per page load: drop ?sos=1 so a reload does not ask again.
+  const sosSent = useRef(false);
+  const onSos = useEffectEvent(() => {
+    if (sosSent.current) return;
+    sosSent.current = true;
+    window.history.replaceState(null, "", "/atlas?new=1");
+    void emergency();
+  });
+  useEffect(() => {
+    if (sos) onSos();
+  }, [sos]);
 
   function newChat() {
     setItems([]);

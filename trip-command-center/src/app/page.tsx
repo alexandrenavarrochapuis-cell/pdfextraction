@@ -1,4 +1,6 @@
 // Screen 1: trips list. Upcoming first, then active, then past (spec section 6).
+// During a trip (or a day before it), the Today card sits on top, and the
+// trips and passes ahead are saved on the phone for use offline.
 
 import Link from "next/link";
 import { Suspense } from "react";
@@ -6,9 +8,14 @@ import { requireUser } from "@/lib/auth";
 import { countReview, listTrips, type TripCard } from "@/lib/data";
 import { userTimezone } from "@/lib/config";
 import { formatMonthDay } from "@/lib/time";
+import { offlineUrls } from "@/lib/offline";
+import { pickTodayTrip } from "@/lib/today";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { ReviewCountBadge } from "@/components/Badges";
 import { AlertIcon, ChevronDownIcon } from "@/components/icons";
 import { Loading } from "@/components/Loading";
+import { OfflineWarmup } from "@/components/Offline";
+import { TodayCard } from "@/components/TodayCard";
 import type { TripStatus } from "@/lib/types";
 
 const GROUP_LABEL: Record<TripStatus, string> = {
@@ -48,14 +55,28 @@ function TripRow({ trip, tz }: { trip: TripCard; tz: string }) {
   );
 }
 
+async function Warmup({ db, trips }: { db: SupabaseClient; trips: TripCard[] }) {
+  return <OfflineWarmup urls={await offlineUrls(db, trips)} />;
+}
+
 async function TripsList() {
   const { db } = await requireUser();
-  const [trips, reviewCount] = await Promise.all([listTrips(db), countReview(db)]);
+  const now = new Date();
+  const [trips, reviewCount] = await Promise.all([listTrips(db, now), countReview(db)]);
   const tz = userTimezone();
   const groups: TripStatus[] = ["upcoming", "active", "past"];
+  const today = pickTodayTrip(trips, now);
 
   return (
     <>
+      {today ? (
+        <Suspense fallback={<Loading label="Loading today…" />}>
+          <TodayCard db={db} trip={today} />
+        </Suspense>
+      ) : null}
+      <Suspense fallback={null}>
+        <Warmup db={db} trips={trips} />
+      </Suspense>
       {reviewCount > 0 ? (
         <Link
           href="/review"

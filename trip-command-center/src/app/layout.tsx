@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Header, HeaderBar } from "@/components/Header";
 import { Nav, NavBar } from "@/components/Nav";
+import { OfflineBanner } from "@/components/Offline";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
@@ -34,7 +35,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={<HeaderBar path={null} />}>
           <Header />
         </Suspense>
-        <main className="mx-auto max-w-2xl px-4 pb-28 pt-3">{children}</main>
+        <main className="mx-auto max-w-2xl px-4 pb-28 pt-3">
+          <OfflineBanner />
+          {children}
+        </main>
         <Suspense fallback={<NavBar path={null} />}>
           <Nav />
         </Suspense>

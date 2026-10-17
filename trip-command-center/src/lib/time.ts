@@ -181,3 +181,15 @@ export function toLocalInput(date: Date | string | null, tz: string | null): str
   const p = (n: number) => String(n).padStart(2, "0");
   return `${w.year}-${p(w.month)}-${p(w.day)}T${p(w.hour)}:${p(w.minute)}`;
 }
+
+/** "in 2 h 5 min" until an instant; "now" once it has passed. */
+export function formatUntil(target: Date | string, now: Date): string {
+  const ms = (typeof target === "string" ? Date.parse(target) : target.getTime()) - now.getTime();
+  if (ms <= 30_000) return "now";
+  const minutes = Math.round(ms / 60_000);
+  if (minutes < 60) return `in ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `in ${hours} h${minutes % 60 ? ` ${minutes % 60} min` : ""}`;
+  const days = Math.floor(hours / 24);
+  return `in ${days} ${days === 1 ? "day" : "days"}${hours % 24 ? ` ${hours % 24} h` : ""}`;
+}
