@@ -29,6 +29,15 @@ export function ownerEmail(): string {
 }
 
 /**
+ * Family members who sign in to the owner's account with their own address:
+ * the code goes to them, the session is the owner's, so they see the same
+ * trips, passes and briefs. Needs AUTH_EMAIL_FROM.
+ */
+export function householdEmails(): string[] {
+  return list(process.env.HOUSEHOLD_EMAILS).map((a) => a.toLowerCase());
+}
+
+/**
  * Sender for the sign-in email Atlas sends itself through Resend, e.g.
  * "Atlas <atlas@your-domain.com>" on a Resend sending domain. Unset, Supabase
  * sends its own email instead.

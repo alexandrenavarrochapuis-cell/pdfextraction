@@ -1,7 +1,21 @@
 // The sign-in email Atlas sends itself through Resend.
 
 import { describe, expect, it } from "vitest";
-import { signInEmail, signInLink } from "@/lib/signin-email";
+import { signInAccount, signInEmail, signInLink } from "@/lib/signin-email";
+
+describe("sign-in account", () => {
+  const owner = "owner@example.com";
+
+  it("opens the owner's account for the owner and household members", () => {
+    expect(signInAccount(owner, owner, ["partner@example.com"])).toBe(owner);
+    expect(signInAccount("partner@example.com", owner, ["partner@example.com"])).toBe(owner);
+  });
+
+  it("refuses anyone else", () => {
+    expect(signInAccount("stranger@example.com", owner, ["partner@example.com"])).toBeNull();
+    expect(signInAccount("partner@example.com", owner, [])).toBeNull();
+  });
+});
 
 describe("sign-in email", () => {
   it("links to the app's own confirm route with the hashed token", () => {

@@ -1,6 +1,14 @@
 // The sign-in email Atlas sends itself (app/login/actions.ts): the code
 // first, for the home-screen app, and a link for a browser.
 
+/**
+ * The account an address signs in to: the owner's own address, or a household
+ * member's, both open the owner's account. Anyone else gets null.
+ */
+export function signInAccount(email: string, owner: string, household: string[]): string | null {
+  return email === owner || household.includes(email) ? owner : null;
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }

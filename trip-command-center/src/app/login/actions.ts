@@ -9,6 +9,8 @@
 // mails it through Resend. Supabase's built-in mailer sends 2 emails an hour,
 // and its email template and link target live in dashboard settings
 // (Auth > Email templates, Auth > URL configuration); this path needs neither.
+// It also lets a household member (HOUSEHOLD_EMAILS) receive the code for the
+// owner's account at their own address.
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -16,9 +18,9 @@ import { createSessionClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createResend } from "@/lib/ingest/deps";
 import { claimCooldown } from "@/lib/lease";
-import { authEmailFrom, ownerEmail } from "@/lib/config";
+import { authEmailFrom, householdEmails, ownerEmail } from "@/lib/config";
 import { safeNextPath } from "@/lib/redirect";
-import { signInEmail, signInLink } from "@/lib/signin-email";
+import { signInAccount, signInEmail, signInLink } from "@/lib/signin-email";
 
 export interface LoginState {
   step: "email" | "code";
@@ -28,36 +30,43 @@ export interface LoginState {
 
 const RESEND_COOLDOWN_MS = 60_000;
 
-async function sendOwnCode(email: string, next: string, origin: string, from: string): Promise<LoginState> {
+/** Generate a code for `account` and mail it to `to`, which may be a household member's address. */
+async function sendOwnCode(account: string, to: string, next: string, origin: string, from: string): Promise<LoginState> {
   const admin = createAdminClient();
-  const key = `signin-email:${email}`;
+  // One code at a time per account: a new one replaces the last.
+  const key = `signin-email:${account}`;
   if (!(await claimCooldown(admin, key, RESEND_COOLDOWN_MS))) {
-    return { step: "code", email, error: "A code was sent less than a minute ago. Use that one, or wait a minute." };
+    return { step: "code", email: to, error: "A code was sent less than a minute ago. Use that one, or wait a minute." };
   }
-  const { data, error } = await admin.auth.admin.generateLink({ type: "magiclink", email });
+  const { data, error } = await admin.auth.admin.generateLink({ type: "magiclink", email: account });
   const sent = error
     ? { error }
     : await createResend().emails.send({
         from,
-        to: email,
+        to,
         ...signInEmail(data.properties.email_otp, signInLink(origin, data.properties.hashed_token, next)),
       });
   if (sent.error) {
     // Let the next try through at once instead of making it wait out the cooldown.
     await admin.from("job_leases").delete().eq("key", key);
-    return { step: "email", email, error: `The sign-in email could not be sent: ${sent.error.message}` };
+    return { step: "email", email: to, error: `The sign-in email could not be sent: ${sent.error.message}` };
   }
-  return { step: "code", email, error: null };
+  return { step: "code", email: to, error: null };
 }
 
 async function sendCode(email: string, next: string): Promise<LoginState> {
-  if (email !== ownerEmail()) {
+  const account = signInAccount(email, ownerEmail(), householdEmails());
+  if (!account) {
     return { step: "email", email, error: "This app is private to its owner." };
   }
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
   const from = authEmailFrom();
-  if (from && process.env.SUPABASE_SERVICE_ROLE_KEY) return sendOwnCode(email, next, origin, from);
+  if (from && process.env.SUPABASE_SERVICE_ROLE_KEY) return sendOwnCode(account, email, next, origin, from);
+  // Supabase mails only the account's own address.
+  if (account !== email) {
+    return { step: "email", email, error: "Household sign-in needs AUTH_EMAIL_FROM to be set." };
+  }
 
   const db = await createSessionClient();
   const { error } = await db.auth.signInWithOtp({
@@ -75,8 +84,10 @@ export async function login(_prev: LoginState, form: FormData): Promise<LoginSta
   const code = form.get("code");
   if (code === null) return sendCode(email, next);
 
+  const account = signInAccount(email, ownerEmail(), householdEmails());
+  if (!account) return { step: "email", email, error: "This app is private to its owner." };
   const db = await createSessionClient();
-  const { error } = await db.auth.verifyOtp({ email, token: String(code).replace(/\s/g, ""), type: "email" });
+  const { error } = await db.auth.verifyOtp({ email: account, token: String(code).replace(/\s/g, ""), type: "email" });
   if (error) return { step: "code", email, error: "That code did not work. Check the latest email and try again." };
   redirect(next);
 }

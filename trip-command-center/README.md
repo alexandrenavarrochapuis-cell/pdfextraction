@@ -105,7 +105,9 @@ Hosted on Vercel.
      - Auth > URL configuration: set the site URL to your Vercel domain and
        add `https://<domain>/auth/confirm` to the redirect URLs.
    - After your first sign-in, turn off new sign-ups (Auth > Providers >
-     Email). The app also refuses any email other than `OWNER_EMAIL`.
+     Email). The app also refuses any email other than `OWNER_EMAIL` and
+     `HOUSEHOLD_EMAILS`. A household address gets its own sign-in code and
+     opens the owner's account, so the family shares one set of trips.
    - Scheduling runs in the database (`0007_scheduler.sql`: pg_cron calls
      the app hourly for briefs and daily for the purge), so it works on any
      Vercel plan. After the first deploy, store the app URL and the cron
@@ -143,7 +145,7 @@ Hosted on Vercel.
 npm install
 cp .env.example .env.local   # then fill it in
 npm run dev                  # http://localhost:3000
-npm test                     # Vitest, 100 tests, no network
+npm test                     # Vitest, 102 tests, no network
 npm run lint && npm run typecheck && npm run build
 ```
 
