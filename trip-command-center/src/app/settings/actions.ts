@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { geocodeAddress } from "@/lib/geo";
+import { geocodeAddress, timezoneAt } from "@/lib/geo";
 
 export async function saveBriefSettings(form: FormData) {
   const { db, user } = await requireUser();
@@ -16,6 +16,13 @@ export async function saveBriefSettings(form: FormData) {
   revalidatePath("/settings");
 }
 
+function pickedCoordinates(form: FormData): { lat: number; lng: number } | null {
+  const lat = Number(form.get("lat"));
+  const lng = Number(form.get("lng"));
+  const valid = form.get("lat") !== "" && form.get("lng") !== "" && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  return valid && Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+}
+
 const PLACE_KINDS_ALLOWED = new Set(["home", "family", "friend", "office", "other"]);
 
 export async function addPlace(form: FormData) {
@@ -24,7 +31,16 @@ export async function addPlace(form: FormData) {
   const address = String(form.get("address") ?? "").trim().slice(0, 300);
   const kindRaw = String(form.get("kind") ?? "other");
   if (!label || !address) return;
-  const geo = await geocodeAddress(address);
+  // Coordinates come with a picked suggestion; typed text is looked up here.
+  const picked = pickedCoordinates(form);
+  const geo = picked
+    ? {
+        ...picked,
+        city: String(form.get("city") ?? "").trim().slice(0, 120) || null,
+        country: /^[A-Za-z]{2}$/.test(String(form.get("country") ?? "")) ? String(form.get("country")).toUpperCase() : null,
+        tz: await timezoneAt(picked.lat, picked.lng),
+      }
+    : await geocodeAddress(address);
   await db.from("places").insert({
     user_id: user.id,
     label,

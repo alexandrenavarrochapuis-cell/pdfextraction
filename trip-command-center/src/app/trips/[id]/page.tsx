@@ -102,7 +102,15 @@ async function Timeline({ params }: { params: Promise<{ id: string }> }) {
       <Link href="/" className="inline-flex min-h-12 items-center font-semibold underline">
         ← All trips
       </Link>
-      <h1 className="text-3xl font-bold">{trip.title}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-3xl font-bold">{trip.title}</h1>
+        <Link
+          href={`/trips/${trip.id}/map`}
+          className="inline-flex min-h-12 items-center gap-2 rounded-xl border-2 border-ink bg-paper px-4 font-bold"
+        >
+          <MapIcon size={18} /> Map
+        </Link>
+      </div>
       <p className="mb-4 text-muted">
         {trip.start_at ? formatMonthDay(trip.start_at, startTz) : "Dates not set"}
         {trip.end_at ? ` to ${formatMonthDay(trip.end_at, lastTz)}` : ""} · {segments.length}{" "}

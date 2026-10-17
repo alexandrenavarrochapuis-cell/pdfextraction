@@ -5,7 +5,8 @@
 
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { addSuperchargers } from "./chargerLayer";
 
 export interface RoutePoint {
   lat: number;
@@ -27,8 +28,9 @@ function badge(text: string, end: boolean): L.DivIcon {
   });
 }
 
-export default function RouteMap({ points }: { points: RoutePoint[] }) {
+export default function RouteMap({ points, driveId }: { points: RoutePoint[]; driveId?: string }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [chargers, setChargers] = useState<number | null | undefined>(undefined);
   useEffect(() => {
     if (!ref.current || !points.length) return;
     const map = L.map(ref.current);
@@ -45,16 +47,28 @@ export default function RouteMap({ points }: { points: RoutePoint[] }) {
         .bindTooltip(p.label, { permanent: true, direction: "right", className: "map-label", offset: [16, 0] });
     });
     map.fitBounds(L.latLngBounds(latlngs), { padding: [48, 48], maxZoom: 13 });
+    if (driveId) addSuperchargers(map, [driveId], setChargers);
     return () => {
       map.remove();
     };
-  }, [points]);
+  }, [points, driveId]);
   return (
-    <div
-      ref={ref}
-      role="img"
-      aria-label={`Route through ${points.map((p) => p.label).join(", ")}`}
-      className="h-[55vh] min-h-80 w-full overflow-hidden rounded-2xl border border-line"
-    />
+    <div className="space-y-1">
+      <div
+        ref={ref}
+        role="img"
+        aria-label={`Route through ${points.map((p) => p.label).join(", ")}`}
+        className="h-[55vh] min-h-80 w-full overflow-hidden rounded-2xl border border-line"
+      />
+      {driveId ? (
+        <p className="text-sm" aria-live="polite">
+          {chargers === undefined
+            ? "Looking for Tesla Superchargers along the way…"
+            : chargers === null || chargers === 0
+              ? "No Tesla Supercharger found near this route on OpenStreetMap."
+              : `Red squares with a bolt: ${chargers} Tesla Superchargers near the route (OpenStreetMap). Tap one for stalls and directions.`}
+        </p>
+      ) : null}
+    </div>
   );
 }

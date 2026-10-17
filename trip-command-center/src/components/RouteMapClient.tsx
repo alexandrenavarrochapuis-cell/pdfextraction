@@ -8,6 +8,6 @@ const RouteMap = dynamic(() => import("./RouteMap"), {
   loading: () => <div className="h-[55vh] min-h-80 rounded-2xl border border-line bg-paper" />,
 });
 
-export function RouteMapClient({ points }: { points: RoutePoint[] }) {
-  return <RouteMap points={points} />;
+export function RouteMapClient({ points, driveId }: { points: RoutePoint[]; driveId?: string }) {
+  return <RouteMap points={points} driveId={driveId} />;
 }

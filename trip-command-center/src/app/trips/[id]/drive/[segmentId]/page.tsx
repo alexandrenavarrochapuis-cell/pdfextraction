@@ -75,7 +75,7 @@ async function Drive({ params }: { params: Promise<{ id: string; segmentId: stri
         </div>
       ) : null}
       {points.length >= 2 ? (
-        <RouteMapClient points={points} />
+        <RouteMapClient points={points} driveId={seg.id} />
       ) : (
         <p className="rounded-2xl border border-line bg-paper p-4">Some addresses could not be found on the map.</p>
       )}

@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/supabase/server";
-import { cachedGeocoder, geocodeAddress, openMeteoGeocoder } from "@/lib/geo";
+import { cachedGeocoder, geocodeAddress, openMeteoGeocoder, timezoneAt } from "@/lib/geo";
 import { buildManualSegment, CreateSegmentSchema } from "@/lib/trips/create";
 import { regroupUser } from "@/lib/trips/regroup";
 
@@ -17,6 +17,7 @@ export async function POST(request: Request) {
   const { values, reasons } = await buildManualSegment(session.db, parsed.data, {
     geocodeAddress,
     geocodeCity: cachedGeocoder(openMeteoGeocoder),
+    timezoneAt,
   });
   if (!values.start_at) {
     return NextResponse.json(

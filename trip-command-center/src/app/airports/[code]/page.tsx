@@ -51,15 +51,15 @@ async function Airport({ params, searchParams }: { params: Promise<{ code: strin
           <LinkIcon size={18} /> Apple Maps indoor map
         </a>
         <a href={googleMaps} className={action} target="_blank" rel="noreferrer">
-          <LinkIcon size={18} /> Google Maps
+          <LinkIcon size={18} /> Google Maps indoor map
         </a>
       </div>
       <p className="text-sm text-muted">
         Map data © OpenStreetMap contributors. Gates and amenities are community-mapped and may be incomplete; signage at
-        the airport wins.
+        the airport wins. Google Maps and Apple Maps show floor plans with levels for many large airports.
       </p>
-      <Link href="/" className="inline-flex min-h-12 items-center font-semibold underline">
-        ← Trips
+      <Link href="/airports" className="inline-flex min-h-12 items-center font-semibold underline">
+        ← Other airports
       </Link>
     </div>
   );

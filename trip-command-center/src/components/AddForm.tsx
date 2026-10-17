@@ -8,6 +8,7 @@ import { useState, useTransition } from "react";
 import type { SavedPlace, StopKind } from "@/lib/types";
 import { STOP_KIND_LABEL } from "@/lib/present";
 import { TypeIcon } from "./icons";
+import { PlaceSearch } from "./PlaceSearch";
 
 type Kind = "drive" | "stop" | "hotel" | "train" | "flight" | "event";
 
@@ -26,6 +27,9 @@ interface PlaceValue {
   label?: string;
   code?: string;
   city?: string;
+  country?: string;
+  lat?: number;
+  lng?: number;
 }
 
 const input = "min-h-12 w-full rounded-xl border-2 border-line bg-paper px-3";
@@ -64,15 +68,12 @@ function PlacePicker({
       ) : null}
       {!saved && mode === "address" ? (
         <>
-          <label className={labelCls}>
-            <span className="font-semibold">Address</span>
-            <input
-              className={input}
-              value={value.address ?? ""}
-              autoComplete="street-address"
-              onChange={(e) => onChange({ ...value, address: e.target.value })}
-            />
-          </label>
+          <PlaceSearch
+            label="Address or place"
+            initial={value}
+            // A picked business fills the name unless one was typed.
+            onChange={(p) => onChange({ ...p, label: value.label || p.label })}
+          />
           <label className={labelCls}>
             <span className="font-semibold">Name (optional)</span>
             <input className={input} value={value.label ?? ""} onChange={(e) => onChange({ ...value, label: e.target.value })} />
@@ -107,7 +108,7 @@ function PlacePicker({
 }
 
 function clean(v: PlaceValue): PlaceValue | undefined {
-  const out = Object.fromEntries(Object.entries(v).filter(([, x]) => x)) as PlaceValue;
+  const out = Object.fromEntries(Object.entries(v).filter(([, x]) => x !== undefined && x !== "")) as PlaceValue;
   return Object.keys(out).length ? out : undefined;
 }
 

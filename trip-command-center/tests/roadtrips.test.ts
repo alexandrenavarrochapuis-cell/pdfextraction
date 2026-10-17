@@ -186,6 +186,7 @@ describe("road trips", () => {
       },
       {
         geocodeCity: stubGeocoder,
+        timezoneAt: async () => "America/New_York",
         geocodeAddress: async (a) => ({
           lat: a.startsWith("Atlanta") ? 33.75 : 29.65,
           lng: a.startsWith("Atlanta") ? -84.39 : -82.32,
@@ -217,6 +218,7 @@ describe("road trips", () => {
       },
       {
         geocodeCity: stubGeocoder,
+        timezoneAt: async () => "America/New_York",
         geocodeAddress: async (a) =>
           a.startsWith("Gainesville") ? { lat: 29.65, lng: -82.32, city: "Gainesville", country: "US", tz: "America/New_York" } : null,
       },

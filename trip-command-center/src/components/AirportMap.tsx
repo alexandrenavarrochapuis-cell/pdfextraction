@@ -1,6 +1,7 @@
 "use client";
 
-// Airport map: gates, restrooms, food, lounges, shops, security and services
+// Airport map: gates, check-in, baggage claim, restrooms, food, lounges, shops,
+// security and services
 // from OpenStreetMap, your live position, and walking distance to a gate.
 // Every marker carries a text label in a shape, so nothing relies on color.
 
@@ -13,6 +14,8 @@ const INK = "#1b1b1f";
 
 const CATEGORY: Record<PoiCategory, { label: string; short: string; radius: string }> = {
   gate: { label: "Gates", short: "", radius: "4px" },
+  checkin: { label: "Check-in", short: "In", radius: "4px" },
+  baggage: { label: "Baggage claim", short: "Bag", radius: "4px" },
   restroom: { label: "Restrooms", short: "WC", radius: "999px" },
   food: { label: "Food", short: "Eat", radius: "999px" },
   lounge: { label: "Lounges", short: "Lng", radius: "2px" },
@@ -22,7 +25,7 @@ const CATEGORY: Record<PoiCategory, { label: string; short: string; radius: stri
   info: { label: "Info", short: "i", radius: "999px" },
 };
 
-const DEFAULT_ON: PoiCategory[] = ["gate", "restroom", "lounge", "security", "food"];
+const DEFAULT_ON: PoiCategory[] = ["gate", "checkin", "baggage", "restroom", "lounge", "security", "food"];
 const WALK_M_PER_MIN = 80;
 
 function icon(p: AirportPoi, target: boolean): L.DivIcon {

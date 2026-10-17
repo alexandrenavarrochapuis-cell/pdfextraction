@@ -1,9 +1,20 @@
 // Points of interest inside airports from OpenStreetMap (Overpass API):
-// gates, restrooms, food, lounges, shops, security, services. Coverage is
+// gates, check-in, baggage claim, restrooms, food, lounges, shops, security,
+// services. Coverage is
 // good at large hubs and thinner at small airports; levels come from the
 // OSM "level" tag when mapped.
 
-export type PoiCategory = "gate" | "restroom" | "food" | "lounge" | "shop" | "security" | "service" | "info";
+export type PoiCategory =
+  | "gate"
+  | "checkin"
+  | "baggage"
+  | "restroom"
+  | "food"
+  | "lounge"
+  | "shop"
+  | "security"
+  | "service"
+  | "info";
 
 export interface AirportPoi {
   id: string;
@@ -15,10 +26,18 @@ export interface AirportPoi {
   level: string | null;
 }
 
+const CHECKIN_NAME = /check[- ]?in|ticketing|ticket counter|bag drop/i;
+const BAGGAGE_NAME = /baggage (claim|reclaim)|carousel/i;
 const LOUNGE_NAME = /lounge|sky ?club|admirals|centurion|polaris|maple leaf|salon|clubhouse|flagship/i;
 
 export function classifyPoi(tags: Record<string, string>): PoiCategory | null {
   if (tags.aeroway === "gate") return "gate";
+  if (tags.aeroway === "check_in" || tags.amenity === "check_in" || (tags.name && CHECKIN_NAME.test(tags.name) && !tags.shop)) {
+    return "checkin";
+  }
+  if (tags.aeroway === "baggage_claim" || tags.amenity === "baggage_claim" || (tags.name && BAGGAGE_NAME.test(tags.name))) {
+    return "baggage";
+  }
   if (tags.amenity === "toilets") return "restroom";
   if (tags.amenity === "lounge" || tags.aeroway === "lounge" || (tags.name && LOUNGE_NAME.test(tags.name) && tags.amenity !== "bar")) {
     return "lounge";
@@ -35,6 +54,9 @@ export function classifyPoi(tags: Record<string, string>): PoiCategory | null {
 
 const SELECTORS = [
   '["aeroway"="gate"]',
+  '["aeroway"~"^(check_in|baggage_claim)$"]',
+  '["amenity"~"^(check_in|baggage_claim)$"]',
+  '["name"~"[Cc]heck-?[Ii]n|[Tt]icketing|[Bb]ag [Dd]rop|[Bb]aggage [Cc]laim|[Bb]aggage [Rr]eclaim"]',
   '["amenity"="toilets"]',
   '["amenity"~"^(restaurant|cafe|fast_food|bar|pub|food_court)$"]',
   '["shop"]',

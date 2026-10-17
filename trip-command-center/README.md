@@ -71,8 +71,16 @@ passphrase cannot be recovered.
 - *Calendar feed:* a private iCalendar link that Outlook, Google Calendar and
   Apple Calendar subscribe to. Confirmation codes are left out.
 
-**Airport maps.** Gates, restrooms, food, lounges, shops and security from
-OpenStreetMap, with your GPS position, gate search and walking distance.
+**Airport maps.** Gates, check-in, baggage claim, restrooms, food, lounges,
+shops and security from OpenStreetMap, with your GPS position, gate search and
+walking distance. Open any airport from Airports on the Trips screen, or from a
+flight. Google Maps and Apple Maps links cover airports with indoor floor plans.
+
+**Trip map and address search.** Each trip has a map: flights, drives with
+their stops, trains, stays and stops, each linked to Google Maps. Drives show
+the Tesla Superchargers within 25 km of the route (OpenStreetMap data; Tesla
+publishes no charger API). Address fields suggest places as you type: Google
+Places with `GOOGLE_MAPS_API_KEY`, OpenStreetMap (Photon) without it.
 
 ## Design rules
 
@@ -145,7 +153,7 @@ Hosted on Vercel.
 npm install
 cp .env.example .env.local   # then fill it in
 npm run dev                  # http://localhost:3000
-npm test                     # Vitest, 108 tests, no network
+npm test                     # Vitest, 113 tests, no network
 npm run lint && npm run typecheck && npm run build
 ```
 

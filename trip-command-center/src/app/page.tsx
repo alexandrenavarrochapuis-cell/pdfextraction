@@ -105,7 +105,10 @@ export default function TripsPage() {
           <Image src="/icons/logo.svg" alt="Atlas" width={36} height={36} unoptimized priority className="rounded-lg" />
           Trips
         </h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
+          <Link href="/airports" className="inline-flex min-h-12 items-center rounded-xl border-2 border-ink bg-paper px-4 font-bold">
+            Airports
+          </Link>
           <Link href="/plan" className="inline-flex min-h-12 items-center rounded-xl border-2 border-ink bg-paper px-4 font-bold">
             Plan
           </Link>

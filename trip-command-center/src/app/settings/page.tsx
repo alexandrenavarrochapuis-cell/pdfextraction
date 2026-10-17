@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { allowedForwarders, inboundAddress } from "@/lib/config";
 import type { Profile, SavedPlace, Traveler } from "@/lib/types";
 import { subscribeLinks } from "@/lib/calendar/links";
+import { PlaceSearch } from "@/components/PlaceSearch";
 import { CopyButton } from "@/components/CopyButton";
 import { PushToggle } from "@/components/PushToggle";
 import { Loading } from "@/components/Loading";
@@ -171,13 +172,9 @@ async function SettingsBody() {
               </option>
             ))}
           </select>
-          <input
-            name="address"
-            required
-            placeholder="Street address"
-            autoComplete="street-address"
-            className="min-h-12 rounded-xl border-2 border-line bg-paper px-3 sm:col-span-2"
-          />
+          <div className="sm:col-span-2">
+            <PlaceSearch label="Address" name="address" required />
+          </div>
           <button className="min-h-12 rounded-xl bg-accent px-5 font-bold text-white sm:col-span-2">Save place</button>
         </form>
       </section>

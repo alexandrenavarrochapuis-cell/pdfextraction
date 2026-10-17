@@ -13,6 +13,10 @@ export const PlaceInputSchema = z.object({
   address: z.string().trim().max(300).optional(),
   code: z.string().trim().max(5).optional(),
   city: z.string().trim().max(120).optional(),
+  // From a picked search suggestion; the zone is looked up from them.
+  country: z.string().trim().regex(/^[A-Za-z]{2}$/).optional(),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
 });
 export type PlaceInput = z.infer<typeof PlaceInputSchema>;
 
@@ -31,6 +35,7 @@ export interface PlaceDeps {
     tz: string | null;
   } | null>;
   geocodeCity: Geocoder;
+  timezoneAt: (lat: number, lng: number) => Promise<string | null>;
 }
 
 export function savedToPlace(p: SavedPlace): Place {
@@ -54,6 +59,20 @@ export async function resolvePlace(
     return {
       place: { code: airport.code, name: airport.name, city: airport.city, country: airport.country, lat: airport.lat, lng: airport.lng },
       tz: airport.tz,
+      kind: null,
+    };
+  }
+  if (input.address && input.lat != null && input.lng != null) {
+    return {
+      place: {
+        name: input.label || null,
+        address: input.address,
+        city: input.city ?? null,
+        country: input.country?.toUpperCase() ?? null,
+        lat: input.lat,
+        lng: input.lng,
+      },
+      tz: await deps.timezoneAt(input.lat, input.lng),
       kind: null,
     };
   }
